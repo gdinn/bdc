@@ -1,0 +1,98 @@
+classDiagram
+    class Usuario {
+        -id: Integer
+        -nome: String
+        -email: String
+        -telefone: String
+        -dataNascimento: Date
+        -tipoUsuario: TipoUsuario
+        -faixaEtaria: FaixaEtaria
+        -isSindico: Boolean
+        -isConselheiro: Boolean
+        -isRepresentanteLegal: Boolean
+        +verificarPermissoes(): Permissao
+        +listarApartamentosAssociados(): List~Apartamento~
+    }
+
+    class Apartamento {
+        -id: Integer
+        -numero: String
+        -bloco: String
+        -andar: Integer
+        +adicionarUsuario(usuario: Usuario): void
+        +removerUsuario(usuario: Usuario): void
+        +definirRepresentanteLegal(usuario: Usuario): void
+        +adicionarVeiculo(veiculo: Veiculo): void
+        +adicionarPet(pet: Pet): void
+        +adicionarBicicleta(bicicleta: Bicicleta): void
+    }
+
+    class Veiculo {
+        -id: Integer
+        -placa: String
+        -modelo: String
+        -cor: String
+        -ano: Integer
+    }
+
+    class Carro {
+        -numeroVaga: String
+    }
+
+    class Moto {
+        -numeroVaga: String
+    }
+
+    class Pet {
+        -id: Integer
+        -nome: String
+        -especie: String
+        -raca: String
+        -porte: String
+    }
+
+    class Bicicleta {
+        -id: Integer
+        -cor: String
+        -modelo: String
+        -numeroIdentificacao: String
+    }
+
+    class Permissao {
+        <<enumeration>>
+        LEITURA
+        ESCRITA
+        LEITURA_ESCRITA
+        SEM_PERMISSAO
+    }
+
+    class TipoUsuario {
+        <<enumeration>>
+        MORADOR
+        EXTERNO
+    }
+
+    class FaixaEtaria {
+        <<enumeration>>
+        ADULTO
+        CRIANCA
+    }
+
+    %% Relacionamentos
+    Usuario "0..*" -- "0..*" Apartamento : possui acesso
+    Usuario "0..1" -- "0..*" Apartamento : representante legal
+    
+    Apartamento "1" *-- "0..2" Carro : possui
+    Apartamento "1" *-- "0..2" Moto : possui
+    Apartamento "1" *-- "0..*" Pet : possui
+    Apartamento "1" *-- "0..*" Bicicleta : possui
+
+    Veiculo <|-- Carro : herda
+    Veiculo <|-- Moto : herda
+
+    Usuario ..> Permissao : usa
+    Usuario ..> TipoUsuario : usa
+    Usuario ..> FaixaEtaria : usa
+
+    %% Notas sobre permissões
+    note for Usuario "Permissões:\n- Síndico: Leitura/Escrita em todos apartamentos\n- Conselheiro: Leitura em todos apartamentos\n- Usuário comum: Leitura/Escrita apenas nos seus apartamentos"

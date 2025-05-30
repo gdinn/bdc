@@ -1,0 +1,203 @@
+graph TB
+    subgraph "Frontend"
+        WEB[Web App]
+        MOBILE[Mobile App]
+    end
+
+    subgraph "API Gateway"
+        APIGW[AWS API Gateway<br/>REST API]
+    end
+
+    subgraph "Autenticação"
+        COGNITO[AWS Cognito<br/>User Pool]
+        AUTHORIZER[Lambda Authorizer<br/>Validação de Permissões]
+    end
+
+    subgraph "Lambda Functions - Usuários"
+        LF_USER_CREATE[λ CreateUser]
+        LF_USER_UPDATE[λ UpdateUser]
+        LF_USER_GET[λ GetUser]
+        LF_USER_LIST[λ ListUsers]
+        LF_USER_PERMISSIONS[λ CheckPermissions]
+        LF_USER_APARTMENTS[λ ListUserApartments]
+    end
+
+    subgraph "Lambda Functions - Apartamentos"
+        LF_APT_CREATE[λ CreateApartment]
+        LF_APT_UPDATE[λ UpdateApartment]
+        LF_APT_USERS_UPDATE[λ ManageApartmentUsers]
+        LF_APT_USERS_GET[λ GetApartmentUsers]
+        LF_APT_REP[λ SetLegalRepresentative]
+    end
+
+    subgraph "Lambda Functions - Veículos"
+        LF_VEH_CREATE[λ CreateVehicle]
+        LF_VEH_UPDATE[λ UpdateVehicle]
+        LF_VEH_DELETE[λ DeleteVehicle]
+        LF_VEH_LIST[λ ListVehicles]
+        LF_VEH_GET[λ GetVehicle]
+    end
+
+    subgraph "Lambda Functions - Pets"
+        LF_PET_CREATE[λ CreatePet]
+        LF_PET_UPDATE[λ UpdatePet]
+        LF_PET_DELETE[λ DeletePet]
+        LF_PET_LIST[λ ListPets]
+        LF_PET_GET[λ GetPet]
+    end
+
+    subgraph "Lambda Functions - Bicicletas"
+        LF_BIKE_CREATE[λ CreateBike]
+        LF_BIKE_UPDATE[λ UpdateBike]
+        LF_BIKE_DELETE[λ DeleteBike]
+        LF_BIKE_LIST[λ ListBikes]
+        LF_BIKE_GET[λ GetBike]
+    end
+
+    subgraph "Banco de Dados"
+        AURORA[AWS Aurora Serverless v2<br/>MySQL/PostgreSQL]
+        
+        subgraph "Tabelas"
+            TB_USERS[usuarios]
+            TB_APTS[apartamentos]
+            TB_USER_APT[usuarios_apartamentos]
+            TB_VEHICLES[veiculos]
+            TB_PETS[pets]
+            TB_BIKES[bicicletas]
+        end
+    end
+
+    subgraph "Eventos & Notificações"
+        EVENTBRIDGE[AWS EventBridge]
+        LF_NOTIFY[λ SendNotifications]
+        SNS[AWS SNS]
+    end
+
+    subgraph "Armazenamento"
+        S3[AWS S3<br/>Documentos/Fotos]
+    end
+
+    %% Conexões Frontend
+    WEB --> APIGW
+    MOBILE --> APIGW
+
+    %% Autenticação
+    APIGW --> COGNITO
+    APIGW --> AUTHORIZER
+    AUTHORIZER --> COGNITO
+
+    %% API para Lambdas
+    APIGW --> LF_USER_CREATE
+    APIGW --> LF_USER_UPDATE
+    APIGW --> LF_USER_GET
+    APIGW --> LF_USER_LIST
+    APIGW --> LF_USER_PERMISSIONS
+    APIGW --> LF_USER_APARTMENTS
+
+    APIGW --> LF_APT_CREATE
+    APIGW --> LF_APT_UPDATE
+    APIGW --> LF_APT_USERS_UPDATE
+    APIGW --> LF_APT_USERS_GET
+    APIGW --> LF_APT_REP
+
+    APIGW --> LF_VEH_CREATE
+    APIGW --> LF_VEH_UPDATE
+    APIGW --> LF_VEH_DELETE
+    APIGW --> LF_VEH_LIST
+    APIGW --> LF_VEH_GET
+
+    APIGW --> LF_PET_CREATE
+    APIGW --> LF_PET_UPDATE
+    APIGW --> LF_PET_DELETE
+    APIGW --> LF_PET_LIST
+    APIGW --> LF_PET_GET
+
+    APIGW --> LF_BIKE_CREATE
+    APIGW --> LF_BIKE_UPDATE
+    APIGW --> LF_BIKE_DELETE
+    APIGW --> LF_BIKE_LIST
+    APIGW --> LF_BIKE_GET
+
+    %% Lambdas para Aurora
+    LF_USER_CREATE --> AURORA
+    LF_USER_UPDATE --> AURORA
+    LF_USER_GET --> AURORA
+    LF_USER_LIST --> AURORA
+    LF_USER_PERMISSIONS --> AURORA
+    LF_USER_APARTMENTS --> AURORA
+
+    LF_APT_CREATE --> AURORA
+    LF_APT_UPDATE --> AURORA
+    LF_APT_USERS_UPDATE --> AURORA
+    LF_APT_USERS_GET --> AURORA
+    LF_APT_REP --> AURORA
+
+    LF_VEH_CREATE --> AURORA
+    LF_VEH_UPDATE --> AURORA
+    LF_VEH_DELETE --> AURORA
+    LF_VEH_LIST --> AURORA
+    LF_VEH_GET --> AURORA
+
+    LF_PET_CREATE --> AURORA
+    LF_PET_UPDATE --> AURORA
+    LF_PET_DELETE --> AURORA
+    LF_PET_LIST --> AURORA
+    LF_PET_GET --> AURORA
+
+    LF_BIKE_CREATE --> AURORA
+    LF_BIKE_UPDATE --> AURORA
+    LF_BIKE_DELETE --> AURORA
+    LF_BIKE_LIST --> AURORA
+    LF_BIKE_GET --> AURORA
+
+    %% Eventos
+    LF_USER_CREATE --> EVENTBRIDGE
+    LF_USER_UPDATE --> EVENTBRIDGE
+    
+    LF_APT_UPDATE --> EVENTBRIDGE
+    LF_APT_USERS_UPDATE --> EVENTBRIDGE
+    LF_APT_REP --> EVENTBRIDGE
+    
+    LF_VEH_CREATE --> EVENTBRIDGE
+    LF_VEH_UPDATE --> EVENTBRIDGE
+    LF_VEH_DELETE --> EVENTBRIDGE
+
+    LF_PET_CREATE --> EVENTBRIDGE
+    LF_PET_UPDATE --> EVENTBRIDGE
+    LF_PET_DELETE --> EVENTBRIDGE
+
+    LF_BIKE_CREATE --> EVENTBRIDGE
+    LF_BIKE_UPDATE --> EVENTBRIDGE
+    LF_BIKE_DELETE --> EVENTBRIDGE  
+
+    EVENTBRIDGE --> LF_NOTIFY
+    LF_NOTIFY --> SNS
+
+    %% S3
+    LF_USER_CREATE -.-> S3
+    LF_USER_UPDATE -.-> S3
+    LF_USER_GET -.-> S3
+    LF_USER_LIST -.-> S3
+
+    LF_APT_USERS_GET -.-> S3
+
+    LF_BIKE_CREATE -.-> S3
+    LF_BIKE_UPDATE -.-> S3
+    LF_BIKE_GET -.-> S3
+    LF_BIKE_LIST -.-> S3
+
+    LF_PET_CREATE -.-> S3
+    LF_PET_UPDATE -.-> S3
+    LF_PET_GET -.-> S3
+    LF_PET_LIST -.-> S3
+
+    LF_VEH_CREATE -.-> S3
+    LF_VEH_UPDATE -.-> S3
+    LF_VEH_GET -.-> S3
+    LF_VEH_LIST -.-> S3
+
+
+
+    style APIGW fill:#f9f,stroke:#333,stroke-width:4px
+    style AURORA fill:#9f9,stroke:#333,stroke-width:4px
+    style COGNITO fill:#ff9,stroke:#333,stroke-width:4px

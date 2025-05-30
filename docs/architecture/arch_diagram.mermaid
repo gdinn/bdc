@@ -17,6 +17,7 @@ graph TB
         LF_USER_CREATE[λ CreateUser]
         LF_USER_UPDATE[λ UpdateUser]
         LF_USER_GET[λ GetUser]
+        LF_USER_LIST[λ ListUsers]
         LF_USER_PERMISSIONS[λ CheckPermissions]
         LF_USER_APARTMENTS[λ ListUserApartments]
     end
@@ -24,7 +25,8 @@ graph TB
     subgraph "Lambda Functions - Apartamentos"
         LF_APT_CREATE[λ CreateApartment]
         LF_APT_UPDATE[λ UpdateApartment]
-        LF_APT_USERS[λ ManageApartmentUsers]
+        LF_APT_USERS_UPDATE[λ ManageApartmentUsers]
+        LF_APT_USERS_GET[λ GetApartmentUsers]
         LF_APT_REP[λ SetLegalRepresentative]
     end
 
@@ -88,12 +90,14 @@ graph TB
     APIGW --> LF_USER_CREATE
     APIGW --> LF_USER_UPDATE
     APIGW --> LF_USER_GET
+    APIGW --> LF_USER_LIST
     APIGW --> LF_USER_PERMISSIONS
     APIGW --> LF_USER_APARTMENTS
 
     APIGW --> LF_APT_CREATE
     APIGW --> LF_APT_UPDATE
-    APIGW --> LF_APT_USERS
+    APIGW --> LF_APT_USERS_UPDATE
+    APIGW --> LF_APT_USERS_GET
     APIGW --> LF_APT_REP
 
     APIGW --> LF_VEH_CREATE
@@ -118,12 +122,14 @@ graph TB
     LF_USER_CREATE --> AURORA
     LF_USER_UPDATE --> AURORA
     LF_USER_GET --> AURORA
+    LF_USER_LIST --> AURORA
     LF_USER_PERMISSIONS --> AURORA
     LF_USER_APARTMENTS --> AURORA
 
     LF_APT_CREATE --> AURORA
     LF_APT_UPDATE --> AURORA
-    LF_APT_USERS --> AURORA
+    LF_APT_USERS_UPDATE --> AURORA
+    LF_APT_USERS_GET --> AURORA
     LF_APT_REP --> AURORA
 
     LF_VEH_CREATE --> AURORA
@@ -149,7 +155,7 @@ graph TB
     LF_USER_UPDATE --> EVENTBRIDGE
     
     LF_APT_UPDATE --> EVENTBRIDGE
-    LF_APT_USERS --> EVENTBRIDGE
+    LF_APT_USERS_UPDATE --> EVENTBRIDGE
     LF_APT_REP --> EVENTBRIDGE
     
     LF_VEH_CREATE --> EVENTBRIDGE
@@ -171,18 +177,24 @@ graph TB
     LF_USER_CREATE -.-> S3
     LF_USER_UPDATE -.-> S3
     LF_USER_GET -.-> S3
+    LF_USER_LIST -.-> S3
+
+    LF_APT_USERS_GET -.-> S3
 
     LF_BIKE_CREATE -.-> S3
     LF_BIKE_UPDATE -.-> S3
     LF_BIKE_GET -.-> S3
+    LF_BIKE_LIST -.-> S3
 
     LF_PET_CREATE -.-> S3
     LF_PET_UPDATE -.-> S3
     LF_PET_GET -.-> S3
+    LF_PET_LIST -.-> S3
 
     LF_VEH_CREATE -.-> S3
     LF_VEH_UPDATE -.-> S3
     LF_VEH_GET -.-> S3
+    LF_VEH_LIST -.-> S3
 
 
 

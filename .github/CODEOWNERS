@@ -1,0 +1,5 @@
+# CODEOWNERS file for main branch
+# This file defines who owns specific parts of the codebase
+# Users listed here will be automatically requested for review on PRs
+
+* @gdinn

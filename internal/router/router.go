@@ -14,9 +14,7 @@ type Router struct {
 	oauthHandler *handlers.OAuthHandler
 }
 
-func NewRouter(
-	oauthHandler *handlers.OAuthHandler,
-) *Router {
+func NewRouter(oauthHandler *handlers.OAuthHandler) *Router {
 	return &Router{
 		oauthHandler: oauthHandler,
 	}
@@ -35,11 +33,6 @@ func (r *Router) Setup() http.Handler {
 			oauth.Get("/logout", r.oauthHandler.Logout)
 		})
 
-		// Rotas protegidas
-		v1.Group(func(protected chi.Router) {
-			// Claims do token (para debug/demonstração)
-			protected.Get("/auth/claims", r.oauthHandler.ShowClaims)
-		})
 	})
 
 	// Arquivos estáticos (se necessário)

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 )
 
@@ -14,7 +13,6 @@ type OAuthConfig struct {
 }
 
 func LoadOAuthConfig() *OAuthConfig {
-	log.Print(os.Getenv("OAUTH_CLIENT_ID"), "alo")
 	return &OAuthConfig{
 		ClientID:     os.Getenv("OAUTH_CLIENT_ID"),
 		ClientSecret: os.Getenv("OAUTH_CLIENT_SECRET"),

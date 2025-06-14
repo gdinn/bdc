@@ -1,6 +1,6 @@
 package models
 
-import "github.com/golang-jwt/jwt/v4"
+import "github.com/golang-jwt/jwt"
 
 type ClaimsPage struct {
 	AccessToken string

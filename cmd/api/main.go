@@ -17,7 +17,6 @@ import (
 )
 
 func main() {
-	log.Print("salve")
 	// Carregar configurações
 	oauthCfg := config.LoadOAuthConfig()
 

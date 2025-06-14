@@ -14,8 +14,12 @@ type OAuthService struct {
 	verifier     *oidc.IDTokenVerifier
 }
 
-func (s *OAuthService) GenerateAuthURL(state string) string {
+func (s *OAuthService) AuthCodeURL(state string) string {
 	return s.oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+}
+
+func (s *OAuthService) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+	return s.oauth2Config.Exchange(ctx, code)
 }
 
 func NewOAuthService(cfg *config.OAuthConfig) (*OAuthService, error) {
@@ -32,7 +36,7 @@ func NewOAuthService(cfg *config.OAuthConfig) (*OAuthService, error) {
 		Scopes:       cfg.Scopes,
 	}
 
-	verifier := provider.Verifier(&oidc.Config{
+	verifier := provider.Verifier(&oidc.Config{ // Não está na config exemplo da aws..
 		ClientID: cfg.ClientID,
 	})
 

@@ -1,0 +1,18 @@
+@if(isAuthenticated?.isAuthenticated == true) {
+  <div>
+  
+    <br />
+  
+    Is Authenticated: {{ isAuthenticated | json }}
+  
+    <br />
+    userData
+    <pre>{{ userData$ | async | json }}</pre>
+  
+    <br />
+  </div>
+  <button (click)="logout()">Logout</button>
+} @else {
+
+  <button (click)="login()">Login</button>
+}

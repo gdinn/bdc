@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import {AuthenticatedResult, OidcSecurityService, LogoutAuthOptions} from 'angular-auth-oidc-client'
 import { inject } from '@angular/core';
 import { AsyncPipe, JsonPipe } from '@angular/common';
+import { cognitoLogoutUrl } from '../auth/auth.config';
 
 @Component({
   selector: 'app-login',
@@ -35,11 +36,13 @@ export class Login {
 
 
   logout(): void {
-    // // Clear session storage
-    this.oidcSecurityService
-      .logoff()
-      .subscribe((result) => console.log(result));
-  }  
+    // Clear session storage
+    if (window.sessionStorage) {
+      window.sessionStorage.clear();
+    }
+
+    window.location.href = cognitoLogoutUrl
+  }
 
   login(): void {
     this.oidcSecurityService.authorize();   

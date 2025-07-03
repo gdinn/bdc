@@ -46,7 +46,7 @@ classDiagram
     class Pet {
         -id: Integer
         -nome: String
-        -especie: String
+        -especie: EspeciePet
         -raca: String
         -porte: String
     }
@@ -78,6 +78,14 @@ classDiagram
         CRIANCA
     }
 
+    class EspeciePet {
+        <<enumeration>>
+        CACHORRO
+        GATO
+        AVE
+        COELHO
+    }    
+
     %% Relacionamentos
     Usuario "0..*" -- "0..*" Apartamento : possui acesso
     Usuario "0..1" -- "0..*" Apartamento : representante legal
@@ -93,6 +101,8 @@ classDiagram
     Usuario ..> Permissao : usa
     Usuario ..> TipoUsuario : usa
     Usuario ..> FaixaEtaria : usa
+
+    Pet ..> EspeciePet : usa
 
     %% Notas sobre permissões
     note for Usuario "Permissões:\n- Síndico: Leitura/Escrita em todos apartamentos\n- Conselheiro: Leitura em todos apartamentos\n- Usuário comum: Leitura/Escrita apenas nos seus apartamentos"

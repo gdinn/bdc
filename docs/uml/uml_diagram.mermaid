@@ -1,108 +1,106 @@
 classDiagram
-    class Usuario {
+    class User {
         -id: Integer
-        -nome: String
+        -name: String
         -email: String
-        -telefone: String
-        -dataNascimento: Date
-        -tipoUsuario: TipoUsuario
-        -faixaEtaria: FaixaEtaria
-        -isSindico: Boolean
-        -isConselheiro: Boolean
-        -isRepresentanteLegal: Boolean
-        +verificarPermissoes(): Permissao
-        +listarApartamentosAssociados(): List~Apartamento~
+        -phone: String
+        -birthDate: Date
+        -type: UserType
+        -ageGroup: UserAgeGroup
+        -isManager: Boolean
+        -isAdvisor: Boolean
+        -isLegalRep: Boolean
+        +checkPermissions(): UserPermission
+        +listAssociatedApartments(): List~Apartment~
     }
 
-    class Apartamento {
+    class Apartment {
         -id: Integer
-        -numero: String
-        -bloco: String
-        -andar: Integer
-        +adicionarUsuario(usuario: Usuario): void
-        +removerUsuario(usuario: Usuario): void
-        +definirRepresentanteLegal(usuario: Usuario): void
-        +adicionarVeiculo(veiculo: Veiculo): void
-        +adicionarPet(pet: Pet): void
-        +adicionarBicicleta(bicicleta: Bicicleta): void
+        -number: String
+        -building: String
+        +addUser(user: User): void
+        +removeUser(user: User): void
+        +assignLegalRep(user: User): void
+        +addVehicle(vehicle: Vehicle): void
+        +addPet(pet: Pet): void
+        +addBicycle(bicycle: Bicycle): void
     }
 
-    class Veiculo {
+    class Vehicle {
         -id: Integer
-        -placa: String
-        -modelo: String
-        -cor: String
-        -ano: Integer
+        -plate: String
+        -model: String
+        -color: String
+        -year: Integer
+        -parkingNumber: String
     }
 
-    class Carro {
-        -numeroVaga: String
+    class Car {
     }
 
-    class Moto {
-        -numeroVaga: String
+    class Motorcycle {
     }
 
     class Pet {
         -id: Integer
-        -nome: String
-        -especie: EspeciePet
-        -raca: String
-        -porte: String
+        -name: String
+        -species: PetSpecies
+        -breed: String
+        -size: String
     }
 
-    class Bicicleta {
+    class Bicycle {
         -id: Integer
-        -cor: String
-        -modelo: String
-        -numeroIdentificacao: String
+        -color: String
+        -model: String
+        -identificationTag: String
     }
 
-    class Permissao {
+    class UserPermission {
         <<enumeration>>
-        LEITURA
-        ESCRITA
-        LEITURA_ESCRITA
-        SEM_PERMISSAO
+        READ
+        WRITE
+        READ_WRITE
+        NO_PERMISSION
     }
 
-    class TipoUsuario {
+    class UserType {
         <<enumeration>>
-        MORADOR
-        EXTERNO
+        RESIDENT
+        EXTERNAL
     }
 
-    class FaixaEtaria {
+    class UserAgeGroup {
         <<enumeration>>
-        ADULTO
-        CRIANCA
+        ADULT
+        CHILD
     }
 
-    class EspeciePet {
+    class PetSpecies {
         <<enumeration>>
-        CACHORRO
-        GATO
-        AVE
-        COELHO
+        DOG
+        CAT
+        BIRD
+        RABBIT
     }    
 
-    %% Relacionamentos
-    Usuario "0..*" -- "0..*" Apartamento : possui acesso
-    Usuario "0..1" -- "0..*" Apartamento : representante legal
+    %% Relations
+    User "0..*" -- "0..*" Apartment : has access
+    User "0..1" -- "0..*" Apartment : legal rep
     
-    Apartamento "1" *-- "0..2" Carro : possui
-    Apartamento "1" *-- "0..2" Moto : possui
-    Apartamento "1" *-- "0..*" Pet : possui
-    Apartamento "1" *-- "0..*" Bicicleta : possui
+    Apartment "1" *-- "0..2" Car : has
+    Apartment "1" *-- "0..2" Motorcycle : has
+    Apartment "1" *-- "0..*" Pet : has
+    Apartment "1" *-- "0..*" Bicycle : has
 
-    Veiculo <|-- Carro : herda
-    Veiculo <|-- Moto : herda
+    Vehicle <|-- Car : inherit
+    Vehicle <|-- Motorcycle : inherit
 
-    Usuario ..> Permissao : usa
-    Usuario ..> TipoUsuario : usa
-    Usuario ..> FaixaEtaria : usa
+    User ..> UserPermission : use
+    User ..> UserType : use
+    User ..> UserAgeGroup : use
 
-    Pet ..> EspeciePet : usa
+    Pet ..> PetSpecies : use
 
-    %% Notas sobre permissões
-    note for Usuario "Permissões:\n- Síndico: Leitura/Escrita em todos apartamentos\n- Conselheiro: Leitura em todos apartamentos\n- Usuário comum: Leitura/Escrita apenas nos seus apartamentos"
+    %% Notes about permissions
+    note for User "Permissions:\n- Manager: READ_WRITE in all apartments\n- Advisor: READ in all apartments\n- Common Resident: READ_WRITE only in own units"

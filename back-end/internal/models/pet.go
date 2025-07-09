@@ -3,17 +3,21 @@ package models
 type PetSpecies string
 
 const (
-	CACHORRO PetSpecies = "DOG"
-	GATO     PetSpecies = "CAT"
-	AVE      PetSpecies = "BIRD"
-	COELHO   PetSpecies = "RABBIT"
+	PetSpeciesDog    PetSpecies = "DOG"
+	PetSpeciesCat    PetSpecies = "CAT"
+	PetSpeciesBird   PetSpecies = "BIRD"
+	PetSpeciesRabbit PetSpecies = "RABBIT"
+	PetSpeciesOther  PetSpecies = "OTHER"
 )
 
-// Pet struct
 type Pet struct {
-	ID      int
-	Name    string
-	Species PetSpecies
-	Breed   string
-	Size    string
+	BaseModel
+	Name    string     `json:"name" gorm:"not null;size:100" validate:"required,max=100"`
+	Species PetSpecies `json:"species" gorm:"not null" validate:"required"`
+	Breed   string     `json:"breed" gorm:"size:100" validate:"max=100"`
+	Size    string     `json:"size" gorm:"size:20" validate:"max=20"`
+
+	// Chave estrangeira
+	ApartmentID uint      `json:"apartment_id" gorm:"not null" validate:"required"`
+	Apartment   Apartment `json:"apartment,omitempty" gorm:"foreignKey:ApartmentID"`
 }

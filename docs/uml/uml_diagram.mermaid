@@ -1,4 +1,23 @@
 classDiagram
+    class BaseModel {
+        <<abstract>>
+        #id: Integer
+        #createdAt: DateTime
+        #updatedAt: DateTime
+        #deletedAt: DateTime?
+        +isDeleted(): Boolean
+        +softDelete(): void
+        +restore(): void
+        +getAuditInfo(): AuditInfo
+    }
+
+    class AuditInfo {
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +deletedAt: DateTime?
+        +isActive: Boolean
+    }    
+
     class User {
         -id: Integer
         -name: String
@@ -9,7 +28,6 @@ classDiagram
         -ageGroup: UserAgeGroup
         -isManager: Boolean
         -isAdvisor: Boolean
-        -isLegalRep: Boolean
         +checkPermissions(): UserPermission
         +listAssociatedApartments(): List~Apartment~
     }
@@ -33,13 +51,16 @@ classDiagram
         -color: String
         -year: Integer
         -parkingNumber: String
+        -type: VehicleType
     }
 
-    class Car {
-    }
 
-    class Motorcycle {
-    }
+    class VehicleType {
+        <<enumeration>>
+        MOTORCYCLE
+        CAR
+    }     
+
 
     class Pet {
         -id: Integer
@@ -82,19 +103,25 @@ classDiagram
         CAT
         BIRD
         RABBIT
-    }    
+        OTHER
+    }       
 
     %% Relations
-    User "0..*" -- "0..*" Apartment : has access
-    User "0..1" -- "0..*" Apartment : legal rep
+    BaseModel <|-- User : inherit
+    BaseModel <|-- Apartment : inherit
+    BaseModel <|-- Vehicle : inherit
+    BaseModel <|-- Pet : inherit
+    BaseModel <|-- Bicycle : inherit
+
+    User "0..*" -- "0..*" Apartment : has
+    User <--o "0..1" Apartment : has legalRep
     
     Apartment "1" *-- "0..2" Car : has
     Apartment "1" *-- "0..2" Motorcycle : has
     Apartment "1" *-- "0..*" Pet : has
     Apartment "1" *-- "0..*" Bicycle : has
 
-    Vehicle <|-- Car : inherit
-    Vehicle <|-- Motorcycle : inherit
+    BaseModel ..> AuditInfo : creates
 
     User ..> UserPermission : use
     User ..> UserType : use
@@ -102,5 +129,8 @@ classDiagram
 
     Pet ..> PetSpecies : use
 
+    Vehicle ..> VehicleType : use
+
     %% Notes about permissions
     note for User "Permissions:\n- Manager: READ_WRITE in all apartments\n- Advisor: READ in all apartments\n- Common Resident: READ_WRITE only in own units"
+       

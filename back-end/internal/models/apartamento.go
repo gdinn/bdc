@@ -1,47 +1,38 @@
 package models
 
 type Apartment struct {
-	ID          int
-	Number      string
-	Building    string
-	Users       []User
-	Cars        []Car
-	Motorcycles []Motorcycle
-	Pets        []Pet
-	Bicycles    []Bicycle
-	LegalRep    *User
+	BaseModel
+	Number   string `json:"number" gorm:"not null;size:10" validate:"required,max=10"`
+	Building string `json:"building" gorm:"not null;size:10" validate:"required,max=10"`
+
+	// Chave estrangeira para representante legal
+	LegalRepresentativeID *uint `json:"legal_representative_id,omitempty"`
+	LegalRepresentative   *User `json:"legal_representative,omitempty" gorm:"foreignKey:LegalRepresentativeID"`
+
+	// Relacionamentos
+	Users    []User    `json:"users,omitempty" gorm:"many2many:user_apartments;"`
+	Vehicles []Vehicle `json:"vehicles,omitempty" gorm:"foreignKey:ApartmentID"`
+	Pets     []Pet     `json:"pets,omitempty" gorm:"foreignKey:ApartmentID"`
+	Bicycles []Bicycle `json:"bicycles,omitempty" gorm:"foreignKey:ApartmentID"`
 }
 
-func (a *Apartment) AddUser(user User) {
-	a.Users = append(a.Users, user)
+// AddUser adiciona um usuário ao apartamento
+func (a *Apartment) AddUser(user *User) {
+	a.Users = append(a.Users, *user)
 }
 
-func (a *Apartment) RemoverUser(user User) {
-	for i, u := range a.Users {
-		if u.ID == user.ID {
+// RemoveUser remove um usuário do apartamento
+func (a *Apartment) RemoveUser(userID uint) {
+	for i, user := range a.Users {
+		if user.ID == userID {
 			a.Users = append(a.Users[:i], a.Users[i+1:]...)
 			break
 		}
 	}
 }
 
-func (a *Apartment) SetLegalRep(user User) {
-	a.LegalRep = &user
-}
-
-func (a *Apartment) AddVehicle(vehicle interface{}) {
-	switch v := vehicle.(type) {
-	case Car:
-		a.Cars = append(a.Cars, v)
-	case Motorcycle:
-		a.Motorcycles = append(a.Motorcycles, v)
-	}
-}
-
-func (a *Apartment) AddPet(pet Pet) {
-	a.Pets = append(a.Pets, pet)
-}
-
-func (a *Apartment) AddBicycle(bicycle Bicycle) {
-	a.Bicycles = append(a.Bicycles, bicycle)
+// AssignLegalRep atribui um representante legal ao apartamento
+func (a *Apartment) AssignLegalRep(user *User) {
+	a.LegalRepresentativeID = &user.ID
+	a.LegalRepresentative = user
 }

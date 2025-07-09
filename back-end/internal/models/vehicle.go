@@ -1,18 +1,22 @@
 package models
 
+type VehicleType string
+
+const (
+	VehicleTypeCar        VehicleType = "CAR"
+	VehicleTypeMotorcycle VehicleType = "MOTORCYCLE"
+)
+
 type Vehicle struct {
-	ID            int
-	Plate         string
-	Model         string
-	Color         string
-	Year          int
-	ParkingNumber string
-}
+	BaseModel
+	Plate         string      `json:"plate" gorm:"uniqueIndex;not null;size:10" validate:"required,max=10"`
+	Model         string      `json:"model" gorm:"not null;size:100" validate:"required,max=100"`
+	Color         string      `json:"color" gorm:"not null;size:50" validate:"required,max=50"`
+	Year          int         `json:"year" validate:"min=1900,max=2030"`
+	ParkingNumber string      `json:"parking_number" gorm:"size:10" validate:"max=10"`
+	Type          VehicleType `json:"type" gorm:"not null" validate:"required"`
 
-type Car struct {
-	Vehicle
-}
-
-type Motorcycle struct {
-	Vehicle
+	// Chave estrangeira
+	ApartmentID uint      `json:"apartment_id" gorm:"not null" validate:"required"`
+	Apartment   Apartment `json:"apartment,omitempty" gorm:"foreignKey:ApartmentID"`
 }

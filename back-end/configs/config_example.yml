@@ -1,6 +1,0 @@
-database:
-  host: "aurora-endpoint"
-  port: 3306
-  username: "username"
-  password: "password"
-  name: "mydatabase"

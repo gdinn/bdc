@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 type PetSpecies string
 
 const (
@@ -18,6 +20,6 @@ type Pet struct {
 	Size    string     `json:"size" gorm:"size:20" validate:"max=20"`
 
 	// Chave estrangeira
-	ApartmentID uint      `json:"apartment_id" gorm:"not null" validate:"required"`
+	ApartmentID uuid.UUID `json:"apartment_id" gorm:"not null" validate:"required"`
 	Apartment   Apartment `json:"apartment,omitempty" gorm:"foreignKey:ApartmentID"`
 }

@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 type VehicleType string
 
 const (
@@ -17,6 +19,6 @@ type Vehicle struct {
 	Type          VehicleType `json:"type" gorm:"not null" validate:"required"`
 
 	// Chave estrangeira
-	ApartmentID uint      `json:"apartment_id" gorm:"not null" validate:"required"`
+	ApartmentID uuid.UUID `json:"apartment_id" gorm:"not null" validate:"required"`
 	Apartment   Apartment `json:"apartment,omitempty" gorm:"foreignKey:ApartmentID"`
 }

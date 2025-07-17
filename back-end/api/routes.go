@@ -1,41 +1,33 @@
 package api
 
 import (
-	"encoding/json"
-	"net/http"
-
-	"bdc/internal/database"
-	"bdc/internal/models"
-
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
+
+	"bdc/internal/handlers"
+	"bdc/internal/repositories"
+	"bdc/internal/services"
 )
 
-func CreateProfileHandler(w http.ResponseWriter, r *http.Request) {
-	var user models.User
+func SetupRoutes(db *gorm.DB) *mux.Router {
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(db)
 
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
-		http.Error(w, "Erro ao decodificar o corpo da requisição: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	// Initialize services
+	userService := services.NewUserService(userRepo)
 
-	if user.Name == "" || user.Email == "" {
-		http.Error(w, "Nome e Email são campos obrigatórios", http.StatusBadRequest)
-		return
-	}
+	// Initialize handlers
+	userHandler := handlers.NewUserHandler(userService)
 
-	err = database.SaveUser(&user)
-	if err != nil {
-		http.Error(w, "Erro ao salvar o usuário no banco de dados: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// Setup router
+	router := mux.NewRouter()
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Perfil criado com sucesso",
-	})
-}
+	// API routes
+	api := router.PathPrefix("/api").Subrouter()
 
-func ConfigRoutes(router *mux.Router) {
-	router.HandleFunc("/profile", CreateProfileHandler).Methods("POST")
+	// User routes
+	userRoutes := api.PathPrefix("/users").Subrouter()
+	userRoutes.HandleFunc("", userHandler.CreateUser).Methods("POST")
+
+	return router
 }

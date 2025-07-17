@@ -1,10 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserApartment struct {
-	UserID      uint      `json:"user_id" gorm:"primaryKey"`
-	ApartmentID uint      `json:"apartment_id" gorm:"primaryKey"`
+	UserID      uuid.UUID `json:"user_id" gorm:"primaryKey"`
+	ApartmentID uuid.UUID `json:"apartment_id" gorm:"primaryKey"`
 	CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
 
 	User      User      `json:"user,omitempty" gorm:"foreignKey:UserID"`

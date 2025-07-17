@@ -1,13 +1,15 @@
 package models
 
+import "github.com/google/uuid"
+
 type Apartment struct {
 	BaseModel
 	Number   string `json:"number" gorm:"not null;size:10" validate:"required,max=10"`
 	Building string `json:"building" gorm:"not null;size:10" validate:"required,max=10"`
 
 	// Chave estrangeira para representante legal
-	LegalRepresentativeID *uint `json:"legal_representative_id,omitempty"`
-	LegalRepresentative   *User `json:"legal_representative,omitempty" gorm:"foreignKey:LegalRepresentativeID"`
+	LegalRepresentativeID *uuid.UUID `json:"legal_representative_id,omitempty"`
+	LegalRepresentative   *User      `json:"legal_representative,omitempty" gorm:"foreignKey:LegalRepresentativeID"`
 
 	// Relacionamentos
 	Users    []User    `json:"users,omitempty" gorm:"many2many:user_apartments;"`
@@ -22,7 +24,7 @@ func (a *Apartment) AddUser(user *User) {
 }
 
 // RemoveUser remove um usuário do apartamento
-func (a *Apartment) RemoveUser(userID uint) {
+func (a *Apartment) RemoveUser(userID uuid.UUID) {
 	for i, user := range a.Users {
 		if user.ID == userID {
 			a.Users = append(a.Users[:i], a.Users[i+1:]...)

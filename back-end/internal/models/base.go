@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type AuditInfo struct {
 	CreatedAt time.Time  `json:"created_at"`
@@ -10,7 +14,7 @@ type AuditInfo struct {
 }
 
 type BaseModel struct {
-	ID        uint       `json:"id" gorm:"primaryKey;autoIncrement"`
+	ID        uuid.UUID  `json:"id" gorm:"primaryKey;autoIncrement"`
 	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty" gorm:"index"`

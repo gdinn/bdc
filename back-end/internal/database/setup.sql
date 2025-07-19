@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS apartments (
     legal_representative_id UUID,
     
     -- Constraints
-    CONSTRAINT fk_apartments_legal_representative 
+    CONSTRAINT fk_users_legal_rep_apartments 
         FOREIGN KEY (legal_representative_id) 
         REFERENCES users(id) 
         ON DELETE SET NULL
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     
     -- Constraints
     CONSTRAINT uq_vehicles_plate UNIQUE (plate),
-    CONSTRAINT fk_vehicles_apartment 
+    CONSTRAINT fk_apartments_vehicles 
         FOREIGN KEY (apartment_id) 
         REFERENCES apartments(id) 
         ON DELETE CASCADE
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS pets (
     apartment_id UUID NOT NULL,
     
     -- Constraints
-    CONSTRAINT fk_pets_apartment 
+    CONSTRAINT fk_apartments_pets 
         FOREIGN KEY (apartment_id) 
         REFERENCES apartments(id) 
         ON DELETE CASCADE
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS bicycles (
     apartment_id UUID NOT NULL,
     
     -- Constraints
-    CONSTRAINT fk_bicycles_apartment 
+    CONSTRAINT fk_apartments_bicycles 
         FOREIGN KEY (apartment_id) 
         REFERENCES apartments(id) 
         ON DELETE CASCADE

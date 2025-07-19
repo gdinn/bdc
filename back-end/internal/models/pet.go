@@ -15,11 +15,11 @@ const (
 type Pet struct {
 	BaseModel
 	Name    string     `json:"name" gorm:"not null;size:100" validate:"required,max=100"`
-	Species PetSpecies `json:"species" gorm:"not null" validate:"required"`
+	Species PetSpecies `json:"species" gorm:"not null;-:migration" validate:"required"`
 	Breed   string     `json:"breed" gorm:"size:100" validate:"max=100"`
 	Size    string     `json:"size" gorm:"size:20" validate:"max=20"`
 
 	// Chave estrangeira
-	ApartmentID uuid.UUID `json:"apartment_id" gorm:"not null" validate:"required"`
+	ApartmentID uuid.UUID `json:"apartment_id" gorm:"not null type:uuid" validate:"required"`
 	Apartment   Apartment `json:"apartment,omitempty" gorm:"foreignKey:ApartmentID"`
 }

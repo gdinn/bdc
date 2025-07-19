@@ -9,6 +9,6 @@ type Bicycle struct {
 	IdentificationTag string `json:"identification_tag" gorm:"size:50" validate:"max=50"`
 
 	// Chave estrangeira
-	ApartmentID uuid.UUID `json:"apartment_id" gorm:"not null" validate:"required"`
+	ApartmentID uuid.UUID `json:"apartment_id" gorm:"not null type:uuid" validate:"required"`
 	Apartment   Apartment `json:"apartment,omitempty" gorm:"foreignKey:ApartmentID"`
 }

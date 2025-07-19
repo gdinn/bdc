@@ -35,8 +35,8 @@ type User struct {
 	BirthDate *time.Time   `json:"birth_date,omitempty"`
 	Type      UserType     `json:"type" gorm:"not null;default:'EXTERNAL'" validate:"required"`
 	AgeGroup  UserAgeGroup `json:"age_group" gorm:"not null;default:'ADULT'" validate:"required"`
-	IsManager bool         `json:"is_manager" gorm:"default:false"`
-	IsAdvisor bool         `json:"is_advisor" gorm:"default:false"`
+	IsManager bool         `json:"is_manager" gorm:"default:false;-:migration"`
+	IsAdvisor bool         `json:"is_advisor" gorm:"default:false;-:migration"`
 
 	// Relacionamentos
 	Apartments         []Apartment `json:"apartments,omitempty" gorm:"many2many:user_apartments;"`

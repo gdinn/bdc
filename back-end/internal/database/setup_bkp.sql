@@ -49,15 +49,15 @@ SELECT current_schema();
 -- =====================================================
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ,
     
     -- Campos específicos
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
-    birth_date TIMESTAMPTZ,
+    birth_date TIMESTAMPTZ NOT NULL,
     type TEXT NOT NULL DEFAULT 'EXTERNAL' CHECK (type IN ('RESIDENT', 'EXTERNAL')),
     age_group TEXT NOT NULL DEFAULT 'ADULT' CHECK (age_group IN ('ADULT', 'CHILD')),
     is_manager BOOLEAN DEFAULT FALSE,
@@ -79,8 +79,8 @@ CREATE INDEX idx_users_is_advisor ON users(is_advisor);
 -- =====================================================
 CREATE TABLE IF NOT EXISTS apartments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ,
     
     -- Campos específicos
@@ -106,7 +106,7 @@ CREATE INDEX idx_apartments_legal_representative_id ON apartments(legal_represen
 CREATE TABLE IF NOT EXISTS user_apartments (
     user_id UUID NOT NULL,
     apartment_id UUID NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Primary key composta
     PRIMARY KEY (user_id, apartment_id),
@@ -131,15 +131,15 @@ CREATE INDEX idx_user_apartments_apartment_id ON user_apartments(apartment_id);
 -- =====================================================
 CREATE TABLE IF NOT EXISTS vehicles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ,
     
     -- Campos específicos
     plate VARCHAR(10) NOT NULL,
     model VARCHAR(100) NOT NULL,
     color VARCHAR(50) NOT NULL,
-    year BIGINT CHECK (year >= 1900 AND year <= 2030),
+    year INTEGER CHECK (year >= 1900 AND year <= 2030),
     parking_number VARCHAR(10),
     type VARCHAR(20) NOT NULL CHECK (type IN ('CAR', 'MOTORCYCLE')),
     apartment_id UUID NOT NULL,
@@ -163,8 +163,8 @@ CREATE INDEX idx_vehicles_type ON vehicles(type);
 -- =====================================================
 CREATE TABLE IF NOT EXISTS pets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ,
     
     -- Campos específicos
@@ -191,8 +191,8 @@ CREATE INDEX idx_pets_species ON pets(species);
 -- =====================================================
 CREATE TABLE IF NOT EXISTS bicycles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ,
     
     -- Campos específicos

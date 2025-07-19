@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type AuditInfo struct {
@@ -14,10 +15,18 @@ type AuditInfo struct {
 }
 
 type BaseModel struct {
-	ID        uuid.UUID  `json:"id" gorm:"primaryKey;autoIncrement"`
+	ID        uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+// BeforeCreate hook para garantir que o UUID seja gerado
+func (b *BaseModel) BeforeCreate(tx *gorm.DB) error {
+	if b.ID == uuid.Nil {
+		b.ID = uuid.New()
+	}
+	return nil
 }
 
 // IsDeleted verifica se o registro foi excluído (soft delete)

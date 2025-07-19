@@ -8,7 +8,7 @@ type Apartment struct {
 	Building string `json:"building" gorm:"not null;size:10" validate:"required,max=10"`
 
 	// Chave estrangeira para representante legal
-	LegalRepresentativeID *uuid.UUID `json:"legal_representative_id,omitempty"`
+	LegalRepresentativeID *uuid.UUID `json:"legal_representative_id,omitempty" gorm:"type:uuid"`
 	LegalRepresentative   *User      `json:"legal_representative,omitempty" gorm:"foreignKey:LegalRepresentativeID"`
 
 	// Relacionamentos

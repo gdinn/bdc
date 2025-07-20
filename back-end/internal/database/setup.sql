@@ -334,3 +334,6 @@ SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'bdc';
     -- dropuser migration_user
     -- \i setup.sql
     -- \i migration.sql
+-- Conecta banco
+    -- \c bdc;
+    -- SET search_path TO bdc;

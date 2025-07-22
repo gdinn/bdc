@@ -14,11 +14,11 @@ func SaveUser(user *models.User) error {
 	defer db.Close()
 
 	query := `
-		INSERT INTO users (name, email, phone, birth_date, type, age_group, is_manager, is_advisor, is_legal_rep)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO users (name, email, phone, birth_date, type, age_group, is_manager, is_advisor)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id
 	`
-	err = db.QueryRow(query, user.Name, user.Email, user.Phone, user.BirthDate, user.Type, user.AgeGroup, user.IsManager, user.IsAdvisor, user.IsLegalRep).Scan(&user.ID)
+	err = db.QueryRow(query, user.Name, user.Email, user.Phone, user.BirthDate, user.Type, user.AgeGroup, user.IsManager, user.IsAdvisor).Scan(&user.ID)
 	if err != nil {
 		return fmt.Errorf("erro ao inserir usuário no banco de dados: %v", err)
 	}

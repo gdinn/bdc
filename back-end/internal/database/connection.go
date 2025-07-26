@@ -2,12 +2,10 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 // connectMigrationDatabase conecta usando usuário com privilégios de DDL
@@ -39,12 +37,12 @@ func ConnectApplicationDatabase() (*gorm.DB, error) {
 // connect estabelece conexão com configurações padrão
 func connect(dsn string) (*gorm.DB, error) {
 	gormConfig := &gorm.Config{
-		Logger: logger.New(
-			log.New(os.Stdout, "\r\n", log.LstdFlags),
-			logger.Config{
-				LogLevel: logger.Info,
-			},
-		),
+		// Logger: logger.New(
+		// 	log.New(os.Stdout, "\r\n", log.LstdFlags),
+		// 	logger.Config{
+		// 		LogLevel: logger.Info,
+		// 	},
+		// ),
 	}
 
 	return gorm.Open(postgres.Open(dsn), gormConfig)

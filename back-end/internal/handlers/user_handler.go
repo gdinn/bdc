@@ -33,8 +33,7 @@ type CreateUserRequest struct {
 	BirthDate *time.Time          `json:"birth_date,omitempty"`
 	Type      models.UserType     `json:"type" validate:"required"`
 	AgeGroup  models.UserAgeGroup `json:"age_group" validate:"required"`
-	IsManager bool                `json:"is_manager,omitempty"`
-	IsAdvisor bool                `json:"is_advisor,omitempty"`
+	Role      models.UserRole     `json:"role" validate:"required"`
 }
 
 // CreateUserResponse representa a resposta da criação de usuário
@@ -82,8 +81,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		BirthDate: req.BirthDate,
 		Type:      req.Type,
 		AgeGroup:  req.AgeGroup,
-		IsManager: req.IsManager,
-		IsAdvisor: req.IsAdvisor,
+		Role:      req.Role,
 	}
 
 	// Call service to create user

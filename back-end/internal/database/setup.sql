@@ -60,8 +60,7 @@ CREATE TABLE IF NOT EXISTS users (
     birth_date TIMESTAMPTZ,
     type TEXT NOT NULL DEFAULT 'EXTERNAL' CHECK (type IN ('RESIDENT', 'EXTERNAL')),
     age_group TEXT NOT NULL DEFAULT 'ADULT' CHECK (age_group IN ('ADULT', 'CHILD')),
-    is_manager BOOLEAN DEFAULT FALSE,
-    is_advisor BOOLEAN DEFAULT FALSE,
+    role TEXT NOT NULL DEFAULT 'COMMON' CHECK (role IN ('COMMON', 'MANAGER', 'ADVISOR')),
     
     -- Constraints
     CONSTRAINT uq_users_email UNIQUE (email)
@@ -71,8 +70,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_type ON users(type);
-CREATE INDEX idx_users_is_manager ON users(is_manager);
-CREATE INDEX idx_users_is_advisor ON users(is_advisor);
+CREATE INDEX idx_users_role ON users(role);
 
 -- =====================================================
 -- 2. TABELA DE APARTAMENTOS
@@ -282,8 +280,7 @@ GROUP BY a.id, u.name, u.email;
 COMMENT ON TABLE users IS 'Tabela de usuários do condomínio';
 COMMENT ON COLUMN users.type IS 'Tipo de usuário: RESIDENT (morador) ou EXTERNAL (externo)';
 COMMENT ON COLUMN users.age_group IS 'Faixa etária: ADULT (adulto) ou CHILD (criança)';
-COMMENT ON COLUMN users.is_manager IS 'Indica se o usuário é síndico';
-COMMENT ON COLUMN users.is_advisor IS 'Indica se o usuário é conselheiro';
+COMMENT ON COLUMN users.role IS 'Perfil de acesso: COMMON (normal), ADVISOR (conselheiro) ou MANAGER (síndico)';
 
 COMMENT ON TABLE apartments IS 'Tabela de apartamentos do condomínio';
 COMMENT ON COLUMN apartments.legal_representative_id IS 'ID do representante legal do apartamento';

@@ -8,10 +8,9 @@ import (
 
 	"bdc/api"
 	"bdc/internal/database"
+	"bdc/internal/repositories"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
-	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
 
 func main() {
@@ -26,6 +25,15 @@ func main() {
 		log.Fatalf("Failed to connect to application database: %v", err)
 	}
 
+	// TESTE
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	_ = repositories.NewCognitoRepository(cfg)
+
+	// FIM TESTE
+
 	// Setup routes
 	router := api.SetupRoutes(db)
 
@@ -35,42 +43,6 @@ func main() {
 		port = "8080"
 	}
 
-	// TESTE
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cred, err := cfg.Credentials.Retrieve(context.Background())
-	if err != nil {
-		print("deu ruim", err.Error())
-	}
-	print(cred.SecretAccessKey)
-
-	updateInfo := cognitoidentityprovider.AdminUpdateUserAttributesInput{
-		UserAttributes: []types.AttributeType{
-			{Name: stringPtr("custom:role"), Value: stringPtr("EXTERNAL_USER")},
-		},
-		UserPoolId: stringPtr(""),
-		Username:   stringPtr(""),
-	}
-
-	client := cognitoidentityprovider.NewFromConfig(cfg)
-
-	output, err := client.AdminUpdateUserAttributes(context.Background(), &updateInfo)
-	if err != nil {
-		// Tratar o erro
-		log.Printf("Erro ao atualizar atributos: %v", err)
-		print(output)
-		return
-	}
-
-	// Fim teste
-
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, router))
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

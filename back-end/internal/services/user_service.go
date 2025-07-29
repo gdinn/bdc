@@ -46,19 +46,12 @@ func (s *UserService) CreateUser(user *models.User) (*models.User, error) {
 }
 
 func (s *UserService) validateUserCreation(user *models.User) error {
-	// Business rules validation
-	if user.IsManager && user.IsAdvisor {
-		return errors.New("user cannot be both manager and advisor")
+	if user.Type == models.UserTypeExternal && user.AgeGroup == models.UserAgeGroupChild {
+		return errors.New("external users cannot be child") // example
 	}
 
-	// Children cannot be managers or advisors
-	if user.AgeGroup == models.UserAgeGroupChild && (user.IsManager || user.IsAdvisor) {
-		return errors.New("children cannot be managers or advisors")
-	}
-
-	// External users typically shouldn't be managers (business rule)
-	if user.Type == models.UserTypeExternal && user.IsManager {
-		return errors.New("external users cannot be managers")
+	if user.AgeGroup == models.UserAgeGroupChild && ((user.Role == models.UserRoleAdvisor) || (user.Role == models.UserRoleManager)) {
+		return errors.New("children cannot be managers or advisors") // example
 	}
 
 	return nil

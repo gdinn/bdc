@@ -20,6 +20,14 @@ const (
 	UserTypeExternal UserType = "EXTERNAL"
 )
 
+type UserRole string
+
+const (
+	UserRoleCommon  UserRole = "COMMON"
+	UserRoleAdvisor UserRole = "ADVISOR"
+	UserRoleManager UserRole = "MANAGER"
+)
+
 type UserAgeGroup string
 
 const (
@@ -35,8 +43,7 @@ type User struct {
 	BirthDate *time.Time   `json:"birth_date,omitempty"`
 	Type      UserType     `json:"type" gorm:"not null;default:'EXTERNAL'" validate:"required"`
 	AgeGroup  UserAgeGroup `json:"age_group" gorm:"not null;default:'ADULT'" validate:"required"`
-	IsManager bool         `json:"is_manager" gorm:"default:false;-:migration"`
-	IsAdvisor bool         `json:"is_advisor" gorm:"default:false;-:migration"`
+	Role      UserRole     `json:"role" gorm:"not null;default:'COMMON'" validate:"required"`
 
 	// Relacionamentos
 	Apartments         []Apartment `json:"apartments,omitempty" gorm:"many2many:user_apartments;"`
@@ -45,10 +52,10 @@ type User struct {
 
 // CheckPermissions retorna as permissões do usuário
 func (u *User) CheckPermissions() UserPermission {
-	if u.IsManager {
+	if u.Role == UserRoleManager {
 		return UserPermissionReadWrite
 	}
-	if u.IsAdvisor {
+	if u.Role == UserRoleAdvisor {
 		return UserPermissionRead
 	}
 	return UserPermissionReadWrite // Para residentes em suas próprias unidades

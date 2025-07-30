@@ -9,6 +9,7 @@ import (
 	"bdc/api"
 	"bdc/internal/database"
 	"bdc/internal/repositories"
+	"bdc/internal/services"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 )
@@ -30,7 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_ = repositories.NewCognitoRepository(cfg)
+	cognitoRepository := repositories.NewCognitoRepository(cfg)
+
+	_ = services.NewCognitoService(cognitoRepository)
 
 	// FIM TESTE
 

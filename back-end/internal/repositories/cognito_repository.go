@@ -1,20 +1,21 @@
 package repositories
 
 import (
+	"bdc/internal/models"
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
-
-	"bdc/internal/models"
 )
 
 type CognitoRepository struct {
 	client     *cognitoidentityprovider.Client
 	userPoolId string
+	timeout    time.Duration
 }
 
 // NewCognitoRepository cria uma nova instância do repositório Cognito
@@ -33,17 +34,13 @@ func (cr *CognitoRepository) UpdateUserInCognito(user *models.User) error {
 			Value: aws.String(user.Name),
 		},
 		{
+			Name:  aws.String("email"), // Verificar como é feita a confirmação desse email depois...
+			Value: aws.String(user.Email),
+		},
+		{
 			Name:  aws.String("custom:role"),
 			Value: aws.String(string(user.Role)),
 		},
-	}
-
-	// Adiciona telefone se fornecido
-	if user.Phone != "" {
-		userAttributes = append(userAttributes, types.AttributeType{
-			Name:  aws.String("phone_number"),
-			Value: aws.String(user.Phone),
-		})
 	}
 
 	input := &cognitoidentityprovider.AdminUpdateUserAttributesInput{
@@ -54,7 +51,7 @@ func (cr *CognitoRepository) UpdateUserInCognito(user *models.User) error {
 
 	_, err := cr.client.AdminUpdateUserAttributes(context.Background(), input)
 	if err != nil {
-		return fmt.Errorf("failed to update user in cognito: %w", err)
+		return fmt.Errorf("CognitoRepository: failed to update user in cognito: %w", err)
 	}
 
 	return nil
@@ -75,7 +72,56 @@ func (cr *CognitoRepository) GetUserFromCognito(email string) (*cognitoidentityp
 	return result, nil
 }
 
-// stringPtr retorna um ponteiro para string
-func stringPtr(s string) *string {
-	return &s
+// DeleteUser exclui um usuário do Cognito
+func (cr *CognitoRepository) DeleteUser(email string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), cr.timeout)
+	defer cancel()
+
+	input := &cognitoidentityprovider.AdminDeleteUserInput{
+		UserPoolId: aws.String(cr.userPoolId),
+		Username:   aws.String(email),
+	}
+
+	_, err := cr.client.AdminDeleteUser(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to delete user from cognito: %w", err)
+	}
+
+	return nil
+}
+
+// DisableUser desabilita um usuário no Cognito
+func (cr *CognitoRepository) DisableUser(email string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), cr.timeout)
+	defer cancel()
+
+	input := &cognitoidentityprovider.AdminDisableUserInput{
+		UserPoolId: aws.String(cr.userPoolId),
+		Username:   aws.String(email),
+	}
+
+	_, err := cr.client.AdminDisableUser(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to disable user in cognito: %w", err)
+	}
+
+	return nil
+}
+
+// EnableUser habilita um usuário no Cognito
+func (cr *CognitoRepository) EnableUser(email string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), cr.timeout)
+	defer cancel()
+
+	input := &cognitoidentityprovider.AdminEnableUserInput{
+		UserPoolId: aws.String(cr.userPoolId),
+		Username:   aws.String(email),
+	}
+
+	_, err := cr.client.AdminEnableUser(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to enable user in cognito: %w", err)
+	}
+
+	return nil
 }

@@ -26,8 +26,7 @@ classDiagram
         -birthDate: Date
         -type: UserType
         -ageGroup: UserAgeGroup
-        -isManager: Boolean
-        -isAdvisor: Boolean
+        -role: UserRole
         +checkPermissions(): UserPermission
         +listAssociatedApartments(): List~Apartment~
     }
@@ -96,6 +95,13 @@ classDiagram
         ADULT
         CHILD
     }
+
+    class UserRole {
+        <<enumeration>>
+        COMMON
+        ADVISOR
+        MANAGER
+    }    
 
     class PetSpecies {
         <<enumeration>>

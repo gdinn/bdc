@@ -1,7 +1,11 @@
 package api
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"gorm.io/gorm"
 
 	"bdc/internal/handlers"
@@ -9,25 +13,79 @@ import (
 	"bdc/internal/services"
 )
 
-func SetupRoutes(db *gorm.DB) *mux.Router {
-	// Initialize repositories
+func SetupRoutes(db *gorm.DB) http.Handler {
 	userRepo := repositories.NewUserRepository(db)
 
-	// Initialize services
 	userService := services.NewUserService(userRepo)
 
-	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService)
 
-	// Setup router
-	router := mux.NewRouter()
+	r := mux.NewRouter()
 
-	// API routes
-	api := router.PathPrefix("/api").Subrouter()
+	r.Use(loggingMiddleware)
 
-	// User routes
-	userRoutes := api.PathPrefix("/users").Subrouter()
-	userRoutes.HandleFunc("", userHandler.CreateUser).Methods("POST")
+	api := r.PathPrefix("/api/v1").Subrouter()
 
-	return router
+	// ====================
+	// PUBLIC ROUTES - No auth
+	// ====================
+	public := api.PathPrefix("/public").Subrouter()
+	public.HandleFunc("/health", healthCheckHandler).Methods("GET")
+	public.HandleFunc("/version", versionHandler).Methods("GET")
+
+	// ====================
+	// PROTECTED ROUTES
+	// ====================
+	api.HandleFunc("/users", userHandler.CreateUserWithAuth()).Methods("POST")
+
+	// ====================
+	// CORS CONFIGURATION
+	// ====================
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost:4200", // Angular dev server
+		},
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+		AllowedHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Content-Type",
+			"X-CSRF-Token",
+		},
+		ExposedHeaders: []string{
+			"Content-Length",
+		},
+		AllowCredentials: true,
+		MaxAge:           300, // 5 minutes
+	})
+
+	return c.Handler(r)
+}
+
+// loggingMiddleware adds loging for all reqs
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s", r.Method, r.RequestURI, r.RemoteAddr)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// healthCheckHandler verify if the API is up
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "healthy", "service": "BDC API"}`))
+}
+
+// versionHandler returns api version
+func versionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"version": "1.0.0", "service": "BDC API"}`))
 }

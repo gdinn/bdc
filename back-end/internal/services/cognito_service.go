@@ -5,6 +5,8 @@ import (
 	"bdc/internal/repositories"
 	"fmt"
 	"log"
+
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 )
 
 type CognitoService struct {
@@ -73,4 +75,15 @@ func (cs *CognitoService) EnableUserInCognito(email string) error {
 
 	log.Printf("User %s successfully enabled in Cognito", email)
 	return nil
+}
+
+func (cs *CognitoService) GetUserInCognito(username string) (*cognitoidentityprovider.AdminGetUserOutput, error) {
+	user, err := cs.cognitoRepository.GetUserFromCognito(username)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to enable user in Cognito: %w", err)
+	}
+
+	log.Printf("User %s successfully enabled in Cognito", username)
+	return user, nil
 }

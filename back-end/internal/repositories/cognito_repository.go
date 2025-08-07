@@ -57,11 +57,11 @@ func (cr *CognitoRepository) UpdateUserInCognito(user *models.User) error {
 	return nil
 }
 
-// GetUserFromCognito busca um usuário no Cognito pelo email
-func (cr *CognitoRepository) GetUserFromCognito(email string) (*cognitoidentityprovider.AdminGetUserOutput, error) {
+// GetUserFromCognito busca um usuário no Cognito pelo username
+func (cr *CognitoRepository) GetUserFromCognito(username string) (*cognitoidentityprovider.AdminGetUserOutput, error) {
 	input := &cognitoidentityprovider.AdminGetUserInput{
 		UserPoolId: aws.String(cr.userPoolId),
-		Username:   aws.String(email),
+		Username:   aws.String(username),
 	}
 
 	result, err := cr.client.AdminGetUser(context.Background(), input)

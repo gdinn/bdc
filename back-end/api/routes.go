@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"log"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"gorm.io/gorm"
@@ -14,11 +16,18 @@ import (
 )
 
 func SetupRoutes(db *gorm.DB) http.Handler {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userRepo := repositories.NewUserRepository(db)
+	cognitoRepository := repositories.NewCognitoRepository(cfg)
 
 	userService := services.NewUserService(userRepo)
+	cognitoService := services.NewCognitoService(cognitoRepository)
 
-	userHandler := handlers.NewUserHandler(userService)
+	userHandler := handlers.NewUserHandler(userService, cognitoService)
 
 	r := mux.NewRouter()
 

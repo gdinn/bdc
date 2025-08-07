@@ -15,14 +15,16 @@ import (
 )
 
 type UserHandler struct {
+	cognitoService *services.CognitoService
 	userService    *services.UserService
 	validator      *validator.Validate
 	authMiddleware *middleware.AuthMiddleware
 }
 
-func NewUserHandler(userService *services.UserService) *UserHandler {
+func NewUserHandler(userService *services.UserService, cognitoService *services.CognitoService) *UserHandler {
 	return &UserHandler{
 		userService:    userService,
+		cognitoService: cognitoService,
 		validator:      validator.New(),
 		authMiddleware: middleware.NewAuthMiddleware(),
 	}
@@ -124,7 +126,7 @@ func (h *UserHandler) validateBusinessRulesForUserCreation(claims *middleware.Us
 
 	// Validate if the received email matches the claims
 	if req.Email != claims.Email {
-		return fmt.Errorf("cannot create user with same email as authenticated user")
+		return fmt.Errorf("cannot create user with different email as authenticated user")
 	}
 
 	return nil

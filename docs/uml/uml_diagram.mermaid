@@ -1,98 +1,142 @@
 classDiagram
-    class Usuario {
+    class BaseModel {
+        <<abstract>>
+        #id: Integer
+        #createdAt: DateTime
+        #updatedAt: DateTime
+        #deletedAt: DateTime?
+        +isDeleted(): Boolean
+        +softDelete(): void
+        +restore(): void
+        +getAuditInfo(): AuditInfo
+    }
+
+    class AuditInfo {
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +deletedAt: DateTime?
+        +isActive: Boolean
+    }    
+
+    class User {
         -id: Integer
-        -nome: String
+        -name: String
         -email: String
-        -telefone: String
-        -dataNascimento: Date
-        -tipoUsuario: TipoUsuario
-        -faixaEtaria: FaixaEtaria
-        -isSindico: Boolean
-        -isConselheiro: Boolean
-        -isRepresentanteLegal: Boolean
-        +verificarPermissoes(): Permissao
-        +listarApartamentosAssociados(): List~Apartamento~
+        -phone: String
+        -birthDate: Date
+        -type: UserType
+        -ageGroup: UserAgeGroup
+        -role: UserRole
+        +checkPermissions(): UserPermission
+        +listAssociatedApartments(): List~Apartment~
     }
 
-    class Apartamento {
+    class Apartment {
         -id: Integer
-        -numero: String
-        -bloco: String
-        -andar: Integer
-        +adicionarUsuario(usuario: Usuario): void
-        +removerUsuario(usuario: Usuario): void
-        +definirRepresentanteLegal(usuario: Usuario): void
-        +adicionarVeiculo(veiculo: Veiculo): void
-        +adicionarPet(pet: Pet): void
-        +adicionarBicicleta(bicicleta: Bicicleta): void
+        -number: String
+        -building: String
+        +addUser(user: User): void
+        +removeUser(user: User): void
+        +assignLegalRep(user: User): void
+        +addVehicle(vehicle: Vehicle): void
+        +addPet(pet: Pet): void
+        +addBicycle(bicycle: Bicycle): void
     }
 
-    class Veiculo {
+    class Vehicle {
         -id: Integer
-        -placa: String
-        -modelo: String
-        -cor: String
-        -ano: Integer
+        -plate: String
+        -model: String
+        -color: String
+        -year: Integer
+        -parkingNumber: String
+        -type: VehicleType
     }
 
-    class Carro {
-        -numeroVaga: String
-    }
 
-    class Moto {
-        -numeroVaga: String
-    }
+    class VehicleType {
+        <<enumeration>>
+        MOTORCYCLE
+        CAR
+    }     
+
 
     class Pet {
         -id: Integer
-        -nome: String
-        -especie: String
-        -raca: String
-        -porte: String
+        -name: String
+        -species: PetSpecies
+        -breed: String
+        -size: String
     }
 
-    class Bicicleta {
+    class Bicycle {
         -id: Integer
-        -cor: String
-        -modelo: String
-        -numeroIdentificacao: String
+        -color: String
+        -model: String
+        -identificationTag: String
     }
 
-    class Permissao {
+    class UserPermission {
         <<enumeration>>
-        LEITURA
-        ESCRITA
-        LEITURA_ESCRITA
-        SEM_PERMISSAO
+        READ
+        WRITE
+        READ_WRITE
+        NO_PERMISSION
     }
 
-    class TipoUsuario {
+    class UserType {
         <<enumeration>>
-        MORADOR
-        EXTERNO
+        RESIDENT
+        EXTERNAL
     }
 
-    class FaixaEtaria {
+    class UserAgeGroup {
         <<enumeration>>
-        ADULTO
-        CRIANCA
+        ADULT
+        CHILD
     }
 
-    %% Relacionamentos
-    Usuario "0..*" -- "0..*" Apartamento : possui acesso
-    Usuario "0..1" -- "0..*" Apartamento : representante legal
+    class UserRole {
+        <<enumeration>>
+        COMMON
+        ADVISOR
+        MANAGER
+    }    
+
+    class PetSpecies {
+        <<enumeration>>
+        DOG
+        CAT
+        BIRD
+        RABBIT
+        OTHER
+    }       
+
+    %% Relations
+    BaseModel <|-- User : inherit
+    BaseModel <|-- Apartment : inherit
+    BaseModel <|-- Vehicle : inherit
+    BaseModel <|-- Pet : inherit
+    BaseModel <|-- Bicycle : inherit
+
+    User "0..*" -- "0..*" Apartment : has
+    User <--o "0..1" Apartment : has legalRep
     
-    Apartamento "1" *-- "0..2" Carro : possui
-    Apartamento "1" *-- "0..2" Moto : possui
-    Apartamento "1" *-- "0..*" Pet : possui
-    Apartamento "1" *-- "0..*" Bicicleta : possui
+    Apartment "1" *-- "0..2" Car : has
+    Apartment "1" *-- "0..2" Motorcycle : has
+    Apartment "1" *-- "0..*" Pet : has
+    Apartment "1" *-- "0..*" Bicycle : has
 
-    Veiculo <|-- Carro : herda
-    Veiculo <|-- Moto : herda
+    BaseModel ..> AuditInfo : creates
 
-    Usuario ..> Permissao : usa
-    Usuario ..> TipoUsuario : usa
-    Usuario ..> FaixaEtaria : usa
+    User ..> UserPermission : use
+    User ..> UserType : use
+    User ..> UserAgeGroup : use
 
-    %% Notas sobre permissões
-    note for Usuario "Permissões:\n- Síndico: Leitura/Escrita em todos apartamentos\n- Conselheiro: Leitura em todos apartamentos\n- Usuário comum: Leitura/Escrita apenas nos seus apartamentos"
+    Pet ..> PetSpecies : use
+
+    Vehicle ..> VehicleType : use
+
+    %% Notes about permissions
+    note for User "Permissions:\n- Manager: READ_WRITE in all apartments\n- Advisor: READ in all apartments\n- Common Resident: READ_WRITE only in own units"
+       

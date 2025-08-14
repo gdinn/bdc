@@ -77,16 +77,6 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isValidUserType(req.Type) {
-		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid user type", fmt.Errorf("type must be RESIDENT or EXTERNAL"))
-		return
-	}
-
-	if !isValidUserAgeGroup(req.AgeGroup) {
-		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid age group", fmt.Errorf("age_group must be ADULT or CHILD"))
-		return
-	}
-
 	if err := h.validateBusinessRulesForUserCreation(userClaims, &req); err != nil {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Business rule validation failed", err)
 		return
@@ -130,14 +120,6 @@ func (h *UserHandler) validateBusinessRulesForUserCreation(claims *middleware.Us
 	}
 
 	return nil
-}
-
-func isValidUserType(userType models.UserType) bool {
-	return userType == models.UserTypeResident || userType == models.UserTypeExternal
-}
-
-func isValidUserAgeGroup(userAgeGroup models.UserAgeGroup) bool {
-	return userAgeGroup == models.UserAgeGroupAdult || userAgeGroup == models.UserAgeGroupChild
 }
 
 // CreateUserWithAuth is a wrapper that applies authentication middleware

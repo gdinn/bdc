@@ -54,5 +54,21 @@ func (s *UserService) validateUserCreation(user *models.User) error {
 		return errors.New("children cannot be managers or advisors") // example
 	}
 
+	if !isValidUserAgeGroup(user.AgeGroup) {
+		return errors.New("ageGroup is invalid")
+	}
+
+	if !isValidUserType(user.Type) {
+		return errors.New("type is invalid")
+	}
+
 	return nil
+}
+
+func isValidUserType(userType models.UserType) bool {
+	return userType == models.UserTypeResident || userType == models.UserTypeExternal
+}
+
+func isValidUserAgeGroup(userAgeGroup models.UserAgeGroup) bool {
+	return userAgeGroup == models.UserAgeGroupAdult || userAgeGroup == models.UserAgeGroupChild
 }

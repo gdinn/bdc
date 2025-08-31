@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import {AuthenticatedResult, OidcSecurityService} from 'angular-auth-oidc-client'
 import { inject } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-callback',
@@ -9,14 +10,10 @@ import { inject } from '@angular/core';
   styleUrl: './callback.scss'
 })
 export class Callback {
-  private readonly oidcSecurityService = inject(OidcSecurityService);
+  constructor(private authService: AuthService){
 
+  }
   ngOnInit() {
-    const token = this.oidcSecurityService.getAccessToken().subscribe((token) => {
-      console.log("Token: ", token)
-    });
-    this.oidcSecurityService.checkAuth().subscribe(res => {
-      console.log("Aqui oh", res)
-    })
+    this.authService.restoreSession().subscribe()
   }
 }

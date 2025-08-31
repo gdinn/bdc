@@ -81,9 +81,8 @@ func (cs *CognitoService) GetUserInCognito(username string) (*cognitoidentitypro
 	user, err := cs.cognitoRepository.GetUserFromCognito(username)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to enable user in Cognito: %w", err)
+		return nil, fmt.Errorf("failed to get user in Cognito: %w", err)
 	}
 
-	log.Printf("User %s successfully enabled in Cognito", username)
 	return user, nil
 }

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 
+	"bdc/internal/domain"
 	"bdc/internal/middleware"
 	"bdc/internal/models"
 	"bdc/internal/services"
@@ -18,7 +18,6 @@ type UserHandler struct {
 	cognitoService *services.CognitoService
 	userService    *services.UserService
 	validator      *validator.Validate
-	authMiddleware *middleware.AuthMiddleware
 }
 
 func NewUserHandler(userService *services.UserService, cognitoService *services.CognitoService) *UserHandler {
@@ -26,17 +25,7 @@ func NewUserHandler(userService *services.UserService, cognitoService *services.
 		userService:    userService,
 		cognitoService: cognitoService,
 		validator:      validator.New(),
-		authMiddleware: middleware.NewAuthMiddleware(),
 	}
-}
-
-type CreateUserRequest struct {
-	Name      string              `json:"name" validate:"required,min=2,max=255"`
-	Email     string              `json:"email" validate:"required,email"`
-	Phone     string              `json:"phone" validate:"omitempty,min=10,max=20"`
-	BirthDate *time.Time          `json:"birth_date,omitempty"`
-	Type      models.UserType     `json:"type" validate:"required"`
-	AgeGroup  models.UserAgeGroup `json:"age_group" validate:"required"`
 }
 
 type CreateUserResponse struct {
@@ -52,20 +41,14 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Set content type
 	w.Header().Set("Content-Type", "application/json")
 
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		utils.SendErrorResponse(w, http.StatusUnauthorized, "Authorization header required", fmt.Errorf("missing authorization header"))
-		return
-	}
-
-	userClaims, err := h.authMiddleware.ValidateToken(authHeader)
-	if err != nil {
-		utils.SendErrorResponse(w, http.StatusUnauthorized, "Invalid or expired token", err)
+	userClaims, ok := middleware.GetUserClaimsFromContext(r.Context())
+	if !ok {
+		utils.SendErrorResponse(w, http.StatusUnauthorized, "Authentication context not found", fmt.Errorf("missing authentication context"))
 		return
 	}
 
 	// Parse request body
-	var req CreateUserRequest
+	var req domain.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid JSON format", err)
 		return
@@ -77,22 +60,13 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.validateBusinessRulesForUserCreation(userClaims, &req); err != nil {
-		utils.SendErrorResponse(w, http.StatusBadRequest, "Business rule validation failed", err)
+	ctx, err := h.createUserContext(userClaims, &req)
+	if err != nil {
+		utils.SendErrorResponse(w, http.StatusForbidden, "Invalid Token", err)
 		return
 	}
 
-	user := &models.User{
-		Name:      req.Name,
-		Email:     req.Email,
-		Phone:     req.Phone,
-		BirthDate: req.BirthDate,
-		Type:      req.Type,
-		AgeGroup:  req.AgeGroup,
-		Role:      models.UserRoleCommon,
-	}
-
-	createdUser, err := h.userService.CreateUser(user)
+	createdUser, err := h.userService.CreateUserWithContext(ctx)
 	if err != nil {
 		if utils.IsEmailAlreadyExistsError(err) {
 			utils.SendErrorResponse(w, http.StatusConflict, "Email already exists", err)
@@ -112,17 +86,25 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *UserHandler) validateBusinessRulesForUserCreation(claims *middleware.UserClaims, req *CreateUserRequest) error {
+// createUserContext factory method para criar o contexto completo
+func (h *UserHandler) createUserContext(claims *middleware.UserClaims, req *domain.CreateUserRequest) (*domain.CreateUserContext, error) {
+	// Converter request HTTP para domain data
+	userData := domain.CreateUserData(req)
 
-	// Validate if the received email matches the claims
-	if req.Email != claims.Email {
-		return fmt.Errorf("cannot create user with different email as authenticated user")
+	cognitoUser, err := h.cognitoService.GetUserInCognito(claims.Username)
+	if err != nil {
+		return nil, err
+	}
+	userData.Name, err = utils.GetUserAttribute(cognitoUser, "name")
+	if err != nil {
+		return nil, err
+	}
+	userData.Email, err = utils.GetUserAttribute(cognitoUser, "email")
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
-}
+	ctx := domain.NewCreateUserContext(claims, userData)
 
-// CreateUserWithAuth is a wrapper that applies authentication middleware
-func (h *UserHandler) CreateUserWithAuth() http.HandlerFunc {
-	return h.authMiddleware.RequireAuth(h.CreateUser)
+	return ctx, nil
 }

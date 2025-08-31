@@ -32,8 +32,8 @@ type CognitoJWK struct {
 // UserClaims represents JWT token claims (available properties)
 type UserClaims struct {
 	Email    string `json:"email"`
-	Username string `json:"cognito:username"`
-	Role     string `json:"custom:role"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
 	Sub      string `json:"sub"`
 	TokenUse string `json:"token_use"`
 	jwt.RegisteredClaims

@@ -8,6 +8,7 @@ export const authConfig: PassedInitialConfig = {
         clientId: 'PROVIDED_ON_EXAMPLE', 
         postLogoutRedirectUri: "http://localhost:4200/logout",
         responseType: 'code',
+        scope: 'email openid',        
         silentRenew: true,
         useRefreshToken: true,
         logLevel: LogLevel.Debug,        

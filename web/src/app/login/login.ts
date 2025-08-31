@@ -1,50 +1,39 @@
 import { Component, OnInit } from '@angular/core';
-import {AuthenticatedResult, OidcSecurityService, LogoutAuthOptions} from 'angular-auth-oidc-client'
-import { inject } from '@angular/core';
 import { AsyncPipe, JsonPipe } from '@angular/common';
-import { cognitoLogoutUrl } from '../auth/auth.config';
+import { AuthService } from '../../services/auth.service';
+import { Observable } from 'rxjs';
+import { UserClaims } from '../../models/auth.model';
 
 @Component({
   selector: 'app-login',
-  imports: [AsyncPipe, JsonPipe],
+  imports: [JsonPipe],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
 export class Login {
-  private readonly oidcSecurityService = inject(OidcSecurityService);
+  isAuthenticated: boolean = false
+  userClaims?: UserClaims
 
-  configuration$ = this.oidcSecurityService.getConfiguration();
+  constructor(private authService: AuthService) {
+    this.authService.isAuthenticated().subscribe(res => {
+      this.isAuthenticated = res
+    })
 
-  userData$ = this.oidcSecurityService.userData$;
+    this.authService.getUserClaims().subscribe(res => {
+      this.userClaims = res
+    })
 
-  isAuthenticated: AuthenticatedResult | undefined = undefined;
-
-
-  ngOnInit(): void {
-    this.oidcSecurityService.isAuthenticated$.subscribe(
-      (isAuthenticated: AuthenticatedResult) => {
-        this.isAuthenticated = isAuthenticated;
-        console.warn('authenticated: ', isAuthenticated);
-      }
-    );
-
-    this.oidcSecurityService.checkAuth().subscribe(({ isAuthenticated, accessToken }) => {
-      console.log('app authenticated', isAuthenticated);
-      console.log(`Current access token is '${accessToken}'`);
-    });    
+    this.authService.getToken().subscribe(res => {
+      console.log("Token", res)
+    })
   }
 
 
   logout(): void {
-    // Clear session storage
-    if (window.sessionStorage) {
-      window.sessionStorage.clear();
-    }
-
-    window.location.href = cognitoLogoutUrl
+    this.authService.logout()
   }
 
   login(): void {
-    this.oidcSecurityService.authorize();   
+    this.authService.login() 
   }
 }

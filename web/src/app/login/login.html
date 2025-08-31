@@ -1,4 +1,4 @@
-@if(isAuthenticated?.isAuthenticated == true) {
+@if(isAuthenticated == true) {
   <div>
   
     <br />
@@ -7,7 +7,7 @@
   
     <br />
     userData
-    <pre>{{ userData$ | async | json }}</pre>
+    <pre>{{ userClaims | json }}</pre>
   
     <br />
   </div>

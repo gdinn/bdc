@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"bdc/internal/handlers"
+	"bdc/internal/middleware"
 	"bdc/internal/repositories"
 	"bdc/internal/services"
 )
@@ -21,16 +22,21 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 		log.Fatal(err)
 	}
 
+	// Repositories
 	userRepo := repositories.NewUserRepository(db)
 	cognitoRepository := repositories.NewCognitoRepository(cfg)
 
+	// Servicves
 	userService := services.NewUserService(userRepo)
 	cognitoService := services.NewCognitoService(cognitoRepository)
 
+	// Handlers
 	userHandler := handlers.NewUserHandler(userService, cognitoService)
 
-	r := mux.NewRouter()
+	// Middlewares
+	authMiddleware := middleware.NewAuthMiddleware()
 
+	r := mux.NewRouter()
 	r.Use(loggingMiddleware)
 
 	api := r.PathPrefix("/api/v1").Subrouter()
@@ -45,7 +51,13 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// ====================
 	// PROTECTED ROUTES
 	// ====================
-	api.HandleFunc("/users", userHandler.CreateUserWithAuth()).Methods("POST")
+	protected := api.PathPrefix("").Subrouter()
+	protected.Use(func(next http.Handler) http.Handler {
+		return authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	})
+	protected.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
 
 	// ====================
 	// CORS CONFIGURATION

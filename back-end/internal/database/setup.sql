@@ -326,6 +326,7 @@ SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'bdc';
 -- \df - Listar funções
 -- \dv - Listar views
 -- Apaga tudo
+    -- SET search_path TO bdc;
     -- DROP SCHEMA IF EXISTS bdc CASCADE;
     -- dropdb bdc
     -- dropuser migration_user

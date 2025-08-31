@@ -27,11 +27,11 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	cognitoRepository := repositories.NewCognitoRepository(cfg)
 
 	// Servicves
-	userService := services.NewUserService(userRepo)
 	cognitoService := services.NewCognitoService(cognitoRepository)
+	userService := services.NewUserService(userRepo, cognitoService)
 
 	// Handlers
-	userHandler := handlers.NewUserHandler(userService, cognitoService)
+	userHandler := handlers.NewUserHandler(userService)
 
 	// Middlewares
 	authMiddleware := middleware.NewAuthMiddleware()

@@ -9,20 +9,36 @@ import (
 	"bdc/internal/domain"
 	"bdc/internal/models"
 	"bdc/internal/repositories"
+	"bdc/internal/utils"
 )
 
 type UserService struct {
-	userRepo *repositories.UserRepository
+	userRepo       *repositories.UserRepository
+	cognitoService *CognitoService
 }
 
-func NewUserService(userRepo *repositories.UserRepository) *UserService {
+func NewUserService(userRepo *repositories.UserRepository, cognitoService *CognitoService) *UserService {
 	return &UserService{
-		userRepo: userRepo,
+		userRepo:       userRepo,
+		cognitoService: cognitoService,
 	}
 }
 
 func (s *UserService) CreateUserWithContext(ctx *domain.CreateUserContext) (*models.User, error) {
 	if err := s.validateBusinessRules(ctx.User); err != nil {
+		return nil, err
+	}
+
+	cognitoUser, err := s.cognitoService.GetUserInCognito(ctx.Claims.Username)
+	if err != nil {
+		return nil, err
+	}
+	ctx.User.Name, err = utils.GetUserAttribute(cognitoUser, "name")
+	if err != nil {
+		return nil, err
+	}
+	ctx.User.Email, err = utils.GetUserAttribute(cognitoUser, "email")
+	if err != nil {
 		return nil, err
 	}
 
@@ -39,12 +55,12 @@ func (s *UserService) CreateUserWithContext(ctx *domain.CreateUserContext) (*mod
 }
 
 func (s *UserService) validateUserIsNew(user *models.User) error {
-	existingUser, err := s.userRepo.GetByEmail(user.Email)
+	emailExists, err := s.userRepo.IsEmailExists(user.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("error checking email existence: %w", err)
 	}
 
-	if existingUser != nil {
+	if emailExists {
 		return domain.ErrEmailAlreadyExists
 	}
 

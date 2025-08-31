@@ -15,16 +15,14 @@ import (
 )
 
 type UserHandler struct {
-	cognitoService *services.CognitoService
-	userService    *services.UserService
-	validator      *validator.Validate
+	userService *services.UserService
+	validator   *validator.Validate
 }
 
-func NewUserHandler(userService *services.UserService, cognitoService *services.CognitoService) *UserHandler {
+func NewUserHandler(userService *services.UserService) *UserHandler {
 	return &UserHandler{
-		userService:    userService,
-		cognitoService: cognitoService,
-		validator:      validator.New(),
+		userService: userService,
+		validator:   validator.New(),
 	}
 }
 
@@ -35,8 +33,8 @@ type CreateUserResponse struct {
 	Error   string       `json:"error,omitempty"`
 }
 
-// CreateUser handles POST /api/users (with mandatory auth)
-// After registering in cognito with only email and pwd, users must provide extra info here
+// CreateUser handles POST /api/v1/users (with mandatory auth)
+// Will create a user in BDC to the corresponding user in Cognito
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Set content type
 	w.Header().Set("Content-Type", "application/json")
@@ -54,7 +52,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate request structure
+	// Validate request structure (tags)
 	if err := h.validator.Struct(req); err != nil {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Validation failed", err)
 		return
@@ -90,19 +88,6 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) createUserContext(claims *middleware.UserClaims, req *domain.CreateUserRequest) (*domain.CreateUserContext, error) {
 	// Converter request HTTP para domain data
 	userData := domain.CreateUserData(req)
-
-	cognitoUser, err := h.cognitoService.GetUserInCognito(claims.Username)
-	if err != nil {
-		return nil, err
-	}
-	userData.Name, err = utils.GetUserAttribute(cognitoUser, "name")
-	if err != nil {
-		return nil, err
-	}
-	userData.Email, err = utils.GetUserAttribute(cognitoUser, "email")
-	if err != nil {
-		return nil, err
-	}
 
 	ctx := domain.NewCreateUserContext(claims, userData)
 

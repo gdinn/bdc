@@ -1,6 +1,9 @@
 package repositories
 
 import (
+	"fmt"
+	"strings"
+
 	"gorm.io/gorm"
 
 	"bdc/internal/models"
@@ -30,6 +33,25 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *UserRepository) IsEmailExists(email string) (bool, error) {
+	if email == "" {
+		return false, fmt.Errorf("email cannot be empty")
+	}
+
+	email = strings.TrimSpace(strings.ToLower(email))
+
+	var count int64
+	err := r.db.Model(&models.User{}).
+		Where("email = ? AND deleted_at IS NULL", email).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("database error: %w", err)
+	}
+
+	return count > 0, nil
 }
 
 func (r *UserRepository) GetByID(id uint) (*models.User, error) {

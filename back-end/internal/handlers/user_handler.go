@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -58,15 +59,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, err := h.createUserContext(userClaims, &req)
-	if err != nil {
-		utils.SendErrorResponse(w, http.StatusForbidden, "Invalid Token", err)
-		return
-	}
+	ctx := h.createUserContext(userClaims, &req)
 
 	createdUser, err := h.userService.CreateUserWithContext(ctx)
 	if err != nil {
-		if utils.IsEmailAlreadyExistsError(err) {
+		if errors.Is(err, domain.ErrEmailAlreadyExists) {
 			utils.SendErrorResponse(w, http.StatusConflict, "Email already exists", err)
 			return
 		}
@@ -85,11 +82,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // createUserContext factory method para criar o contexto completo
-func (h *UserHandler) createUserContext(claims *middleware.UserClaims, req *domain.CreateUserRequest) (*domain.CreateUserContext, error) {
+func (h *UserHandler) createUserContext(claims *middleware.UserClaims, req *domain.CreateUserRequest) *domain.CreateUserContext {
 	// Converter request HTTP para domain data
 	userData := domain.CreateUserData(req)
 
 	ctx := domain.NewCreateUserContext(claims, userData)
 
-	return ctx, nil
+	return ctx
 }

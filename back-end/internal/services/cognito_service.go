@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bdc/internal/domain"
 	"bdc/internal/models"
 	"bdc/internal/repositories"
 	"fmt"
@@ -13,6 +14,12 @@ type CognitoService struct {
 	cognitoRepository *repositories.CognitoRepository
 }
 
+const (
+	ErrMsgDeleteUserCognito = "failed to delete user in cognito"
+	ErrMsgCreateUserCognito = "failed to create user in cognito"
+	ErrMsgUpdateUserCognito = "failed to update user in cognito"
+)
+
 func NewCognitoService(cognitoRepo *repositories.CognitoRepository) *CognitoService {
 	return &CognitoService{
 		cognitoRepository: cognitoRepo,
@@ -24,13 +31,13 @@ func (cs *CognitoService) UpdateUserInCognito(user *models.User) error {
 	// Verificar se o usuário existe no Cognito primeiro
 	_, err := cs.cognitoRepository.GetUserFromCognito(user.Email)
 	if err != nil {
-		return fmt.Errorf("failed to update user in Cognito. User does not exist: %w", err)
+		return fmt.Errorf("%s: %w", ErrMsgUpdateUserCognito, err)
 	}
 
 	// Atualizar no Cognito
 	err = cs.cognitoRepository.UpdateUserInCognito(user)
 	if err != nil {
-		return fmt.Errorf("failed to update user in Cognito: %w", err)
+		return fmt.Errorf("%s: %w", ErrMsgUpdateUserCognito, err)
 	}
 
 	log.Printf("User %s successfully updated in Cognito", user.Email)
@@ -39,16 +46,20 @@ func (cs *CognitoService) UpdateUserInCognito(user *models.User) error {
 
 // DeleteUserFromCognito remove usuário do Cognito
 func (cs *CognitoService) DeleteUserFromCognito(email string) error {
+	if email == "" {
+		return fmt.Errorf("%s: %w", ErrMsgDeleteUserCognito, domain.ErrEmailEmpty)
+	}
+
 	// Verificar se existe
 	_, err := cs.cognitoRepository.GetUserFromCognito(email)
 	if err != nil {
-		return fmt.Errorf("user not found in Cognito: %w", err)
+		return fmt.Errorf("%s: %w", ErrMsgDeleteUserCognito, err)
 	}
 
 	// Deletar
 	err = cs.cognitoRepository.DeleteUser(email)
 	if err != nil {
-		return fmt.Errorf("failed to delete user from Cognito: %w", err)
+		return fmt.Errorf("%s: %w", ErrMsgDeleteUserCognito, err)
 	}
 
 	log.Printf("User %s successfully deleted from Cognito", email)
@@ -59,7 +70,7 @@ func (cs *CognitoService) DeleteUserFromCognito(email string) error {
 func (cs *CognitoService) DisableUserInCognito(email string) error {
 	err := cs.cognitoRepository.DisableUser(email)
 	if err != nil {
-		return fmt.Errorf("failed to disable user in Cognito: %w", err)
+		return err
 	}
 
 	log.Printf("User %s successfully disabled in Cognito", email)
@@ -70,7 +81,7 @@ func (cs *CognitoService) DisableUserInCognito(email string) error {
 func (cs *CognitoService) EnableUserInCognito(email string) error {
 	err := cs.cognitoRepository.EnableUser(email)
 	if err != nil {
-		return fmt.Errorf("failed to enable user in Cognito: %w", err)
+		return err
 	}
 
 	log.Printf("User %s successfully enabled in Cognito", email)
@@ -81,7 +92,7 @@ func (cs *CognitoService) GetUserInCognito(username string) (*cognitoidentitypro
 	user, err := cs.cognitoRepository.GetUserFromCognito(username)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user in Cognito: %w", err)
+		return nil, err
 	}
 
 	return user, nil

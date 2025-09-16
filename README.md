@@ -19,6 +19,8 @@ O sistema possibilita aos usuários:
 ## 📄 Licença
 
 Este projeto está licenciado sob a **MIT License**. Consulte o arquivo [LICENSE](https://github.com/gdinn/bdc/blob/main/LICENSE) para mais informações.
+
+## Arvore do projeto
 ```
 bdc
 ├─ 📁back-end

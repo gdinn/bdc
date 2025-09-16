@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 )
 
 type ErrorResponse struct {
@@ -25,8 +24,4 @@ func SendErrorResponse(w http.ResponseWriter, statusCode int, message string, er
 	}
 
 	json.NewEncoder(w).Encode(response)
-}
-
-func IsEmailAlreadyExistsError(err error) bool {
-	return strings.Contains(err.Error(), "email already exists")
 }

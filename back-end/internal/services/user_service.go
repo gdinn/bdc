@@ -9,15 +9,22 @@ import (
 	"bdc/internal/domain"
 	"bdc/internal/models"
 	"bdc/internal/repositories"
+	"bdc/internal/utils"
 )
 
 type UserService struct {
-	userRepo *repositories.UserRepository
+	userRepo       *repositories.UserRepository
+	cognitoService *CognitoService
 }
 
-func NewUserService(userRepo *repositories.UserRepository) *UserService {
+const (
+	ErrCreatingUserWithContext = "failed to create user with context"
+)
+
+func NewUserService(userRepo *repositories.UserRepository, cognitoService *CognitoService) *UserService {
 	return &UserService{
-		userRepo: userRepo,
+		userRepo:       userRepo,
+		cognitoService: cognitoService,
 	}
 }
 
@@ -26,26 +33,39 @@ func (s *UserService) CreateUserWithContext(ctx *domain.CreateUserContext) (*mod
 		return nil, err
 	}
 
+	cognitoUser, err := s.cognitoService.GetUserInCognito(ctx.Claims.Username)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", ErrCreatingUserWithContext, err)
+	}
+	ctx.User.Name, err = utils.GetUserAttribute(cognitoUser, "name")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", ErrCreatingUserWithContext, err)
+	}
+	ctx.User.Email, err = utils.GetUserAttribute(cognitoUser, "email")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", ErrCreatingUserWithContext, err)
+	}
+
 	if err := s.validateUserIsNew(ctx.User); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", ErrCreatingUserWithContext, err)
 	}
 
 	createdUser, err := s.userRepo.Create(ctx.User)
 	if err != nil {
-		return nil, fmt.Errorf("error creating user: %w", err)
+		return nil, fmt.Errorf("%s: %w", ErrCreatingUserWithContext, err)
 	}
 
 	return createdUser, nil
 }
 
 func (s *UserService) validateUserIsNew(user *models.User) error {
-	existingUser, err := s.userRepo.GetByEmail(user.Email)
+	emailExists, err := s.userRepo.IsEmailExists(user.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("error checking email existence: %w", err)
 	}
 
-	if existingUser != nil {
-		return domain.ErrEmailAlreadyExists
+	if emailExists {
+		return fmt.Errorf("user.Email is %s: %w", user.Email, domain.ErrEmailAlreadyExists)
 	}
 
 	return nil
@@ -53,19 +73,19 @@ func (s *UserService) validateUserIsNew(user *models.User) error {
 
 func (s *UserService) validateBusinessRules(user *models.User) error {
 	if user.Type == models.UserTypeExternal && user.AgeGroup == models.UserAgeGroupChild {
-		return domain.ErrExternalUsersCannotBeChild // example
+		return fmt.Errorf("user.Type is %s and user.AgeGroup is %s: %w", user.Type, user.AgeGroup, domain.ErrExternalUsersCannotBeChild)
 	}
 
 	if user.AgeGroup == models.UserAgeGroupChild && ((user.Role == models.UserRoleAdvisor) || (user.Role == models.UserRoleManager)) {
-		return domain.ErrChildrenCannotBeManagerOrAdvisors
+		return fmt.Errorf("user.AgeGroup is %s and user.Role is %s: %w", user.AgeGroup, user.Role, domain.ErrChildrenCannotBeManagerOrAdvisors)
 	}
 
 	if !isValidUserAgeGroup(user.AgeGroup) {
-		return domain.ErrAgeGroupInvalid
+		return fmt.Errorf("user.AgeGroup is %s: %w", user.AgeGroup, domain.ErrAgeGroupInvalid)
 	}
 
 	if !isValidUserType(user.Type) {
-		return domain.ErrTypeInvalid
+		return fmt.Errorf("user.Type is %s: %w", user.Type, domain.ErrTypeInvalid)
 	}
 
 	return nil

@@ -51,7 +51,7 @@ func (cr *CognitoRepository) UpdateUserInCognito(user *models.User) error {
 
 	_, err := cr.client.AdminUpdateUserAttributes(context.Background(), input)
 	if err != nil {
-		return fmt.Errorf("CognitoRepository: failed to update user in cognito: %w", err)
+		return fmt.Errorf("failed to update user in cognito: %w", err)
 	}
 
 	return nil

@@ -335,3 +335,5 @@ SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'bdc';
 -- Conecta banco
     -- \c bdc;
     -- SET search_path TO bdc;
+-- Apaga usuários
+    -- TRUNCATE TABLE bdc.users CASCADE;

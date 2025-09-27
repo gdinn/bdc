@@ -7,13 +7,13 @@ import (
 	"gorm.io/gorm"
 
 	"bdc/internal/domain"
+	"bdc/internal/interfaces"
 	"bdc/internal/models"
-	"bdc/internal/repositories"
 	"bdc/internal/utils"
 )
 
 type UserService struct {
-	userRepo       *repositories.UserRepository
+	userRepo       interfaces.UserRepositoryInterface
 	cognitoService *CognitoService
 }
 
@@ -21,7 +21,7 @@ const (
 	ErrCreatingUserWithContext = "failed to create user with context"
 )
 
-func NewUserService(userRepo *repositories.UserRepository, cognitoService *CognitoService) *UserService {
+func NewUserService(userRepo interfaces.UserRepositoryInterface, cognitoService *CognitoService) *UserService {
 	return &UserService{
 		userRepo:       userRepo,
 		cognitoService: cognitoService,

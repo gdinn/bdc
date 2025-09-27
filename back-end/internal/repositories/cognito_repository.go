@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"bdc/internal/interfaces"
 	"bdc/internal/models"
 	"context"
 	"fmt"
@@ -18,8 +19,11 @@ type CognitoRepository struct {
 	timeout    time.Duration
 }
 
+// Verificação em tempo de compilação se CognitoRepository implementa a interface
+var _ interfaces.CognitoRepositoryInterface = (*CognitoRepository)(nil)
+
 // NewCognitoRepository cria uma nova instância do repositório Cognito
-func NewCognitoRepository(cfg aws.Config) *CognitoRepository {
+func NewCognitoRepository(cfg aws.Config) interfaces.CognitoRepositoryInterface {
 	return &CognitoRepository{
 		client:     cognitoidentityprovider.NewFromConfig(cfg),
 		userPoolId: os.Getenv("AWS_COGNITO_USER_POOL_ID"),

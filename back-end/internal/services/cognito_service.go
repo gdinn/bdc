@@ -2,8 +2,8 @@ package services
 
 import (
 	"bdc/internal/domain"
+	"bdc/internal/interfaces"
 	"bdc/internal/models"
-	"bdc/internal/repositories"
 	"fmt"
 	"log"
 
@@ -11,7 +11,7 @@ import (
 )
 
 type CognitoService struct {
-	cognitoRepository *repositories.CognitoRepository
+	cognitoRepository interfaces.CognitoRepositoryInterface
 }
 
 const (
@@ -20,7 +20,7 @@ const (
 	ErrMsgUpdateUserCognito = "failed to update user in cognito"
 )
 
-func NewCognitoService(cognitoRepo *repositories.CognitoRepository) *CognitoService {
+func NewCognitoService(cognitoRepo interfaces.CognitoRepositoryInterface) *CognitoService {
 	return &CognitoService{
 		cognitoRepository: cognitoRepo,
 	}

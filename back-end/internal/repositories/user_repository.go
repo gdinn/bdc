@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"bdc/internal/domain"
+	"bdc/internal/interfaces"
 	"bdc/internal/models"
 )
 
@@ -18,7 +19,7 @@ const (
 	ErrCheckingEmailExistence = "error checking email existence"
 )
 
-func NewUserRepository(db *gorm.DB) *UserRepository {
+func NewUserRepository(db *gorm.DB) interfaces.UserRepositoryInterface {
 	return &UserRepository{
 		db: db,
 	}

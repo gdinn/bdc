@@ -58,12 +58,11 @@ const (
 func NewAuthMiddleware() *AuthMiddleware {
 	region := os.Getenv("AWS_REGION")
 	poolID := os.Getenv("AWS_COGNITO_USER_POOL_ID")
+	jwksURL := os.Getenv("AWS_COGNITO_JWKS_URL")
 
 	if region == "" || poolID == "" {
 		panic("AWS_REGION and AWS_COGNITO_USER_POOL_ID must be set")
 	}
-
-	jwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", region, poolID)
 
 	return &AuthMiddleware{
 		cognitoRegion: region,

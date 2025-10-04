@@ -24,14 +24,17 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 
 	// Repositories
 	userRepo := repositories.NewUserRepository(db)
+	apartmentRepo := repositories.NewApartmentRepository(db)
 	cognitoRepository := repositories.NewCognitoRepository(cfg)
 
 	// Servicves
 	cognitoService := services.NewCognitoService(cognitoRepository)
 	userService := services.NewUserService(userRepo, cognitoService)
+	apartmentService := services.NewApartmentService(apartmentRepo)
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService)
+	apartmentHandler := handlers.NewApartmentHandler(apartmentService)
 
 	// Middlewares
 	authMiddleware := middleware.NewAuthMiddleware()
@@ -58,6 +61,7 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 		})
 	})
 	protected.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
+	protected.HandleFunc("/apartments", apartmentHandler.CreateApartment).Methods("POST")
 
 	// ====================
 	// CORS CONFIGURATION

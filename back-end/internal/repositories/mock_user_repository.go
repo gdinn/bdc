@@ -72,15 +72,14 @@ func (m *MockUserRepository) Create(user *models.User) (*models.User, error) {
 		return nil, fmt.Errorf("mock error: failed to create user")
 	}
 
+	// Replica validação gorm de não nulidade
 	if user.Email == "" {
 		return nil, fmt.Errorf("email cannot be empty")
 	}
 
-	// Normalizar email
-	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
-
-	// Verificar se email já existe
-	if _, exists := m.users[user.Email]; exists {
+	// Replica validação gorm de existência
+	normalizedEmail := strings.ToLower(strings.TrimSpace(user.Email))
+	if _, exists := m.users[normalizedEmail]; exists {
 		return nil, fmt.Errorf("email already exists")
 	}
 

@@ -38,7 +38,7 @@ func (cr *CognitoRepository) UpdateUserInCognito(user *models.User) error {
 			Value: aws.String(user.Name),
 		},
 		{
-			Name:  aws.String("email"), // Verificar como é feita a confirmação desse email depois...
+			Name:  aws.String("email"),
 			Value: aws.String(user.Email),
 		},
 		{

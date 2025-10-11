@@ -6,10 +6,10 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -60,26 +60,12 @@ func createTestJWT(privateKey *rsa.PrivateKey, kid string, claims *UserClaims) (
 
 func TestNewAuthMiddleware(t *testing.T) {
 	// Arrange
-	originalRegion := os.Getenv("AWS_REGION")
-	originalPoolID := os.Getenv("AWS_COGNITO_USER_POOL_ID")
-
-	// Set test environment variables
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-
-	defer func() {
-		// Restore original values
-		if originalRegion == "" {
-			os.Unsetenv("AWS_REGION")
-		} else {
-			os.Setenv("AWS_REGION", originalRegion)
-		}
-		if originalPoolID == "" {
-			os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
-		} else {
-			os.Setenv("AWS_COGNITO_USER_POOL_ID", originalPoolID)
-		}
-	}()
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	mockJwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", mockRegion, mockPoolID)
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	t.Setenv("AWS_COGNITO_JWKS_URL", mockJwksURL)
 
 	// Act
 	middleware := NewAuthMiddleware()
@@ -89,38 +75,21 @@ func TestNewAuthMiddleware(t *testing.T) {
 		t.Error("Expected middleware to be created, but got nil")
 	}
 
-	if middleware.cognitoRegion != "us-east-1" {
-		t.Errorf("Expected region to be us-east-1, but got %s", middleware.cognitoRegion)
+	if middleware.cognitoRegion != mockRegion {
+		t.Errorf("Expected region to be %s, but got %s", mockRegion, middleware.cognitoRegion)
 	}
 
-	if middleware.cognitoPoolID != "us-east-1_test123" {
-		t.Errorf("Expected poolID to be us-east-1_test123, but got %s", middleware.cognitoPoolID)
+	if middleware.cognitoPoolID != mockPoolID {
+		t.Errorf("Expected poolID to be %s, but got %s", mockPoolID, middleware.cognitoPoolID)
 	}
 
-	expectedURL := "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_test123/.well-known/jwks.json"
-	if middleware.jwksURL != expectedURL {
-		t.Errorf("Expected jwksURL to be %s, but got %s", expectedURL, middleware.jwksURL)
+	if middleware.jwksURL != mockJwksURL {
+		t.Errorf("Expected jwksURL to be %s, but got %s", mockJwksURL, middleware.jwksURL)
 	}
 }
 
 func TestNewAuthMiddleware_MissingEnvironmentVariables(t *testing.T) {
-	// Arrange
-	originalRegion := os.Getenv("AWS_REGION")
-	originalPoolID := os.Getenv("AWS_COGNITO_USER_POOL_ID")
-
-	// Unset environment variables
-	os.Unsetenv("AWS_REGION")
-	os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
-
 	defer func() {
-		// Restore original values
-		if originalRegion != "" {
-			os.Setenv("AWS_REGION", originalRegion)
-		}
-		if originalPoolID != "" {
-			os.Setenv("AWS_COGNITO_USER_POOL_ID", originalPoolID)
-		}
-
 		// Recover from panic
 		if r := recover(); r == nil {
 			t.Error("Expected panic when environment variables are missing")
@@ -146,10 +115,11 @@ func TestValidateToken_Success(t *testing.T) {
 	defer server.Close()
 
 	// Set up environment variables
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	mockIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", mockRegion, mockPoolID)
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -161,7 +131,7 @@ func TestValidateToken_Success(t *testing.T) {
 		Role:     "COMMON",
 		TokenUse: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_test123",
+			Issuer: mockIssuer,
 		},
 	}
 
@@ -189,10 +159,10 @@ func TestValidateToken_Success(t *testing.T) {
 
 func TestValidateToken_InvalidSigningMethod(t *testing.T) {
 	// Arrange
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 
@@ -224,10 +194,10 @@ func TestValidateToken_MissingKid(t *testing.T) {
 		t.Fatalf("Failed to generate test key: %v", err)
 	}
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 
@@ -266,10 +236,11 @@ func TestValidateToken_InvalidTokenUse(t *testing.T) {
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	mockIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", mockRegion, mockPoolID)
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -279,7 +250,7 @@ func TestValidateToken_InvalidTokenUse(t *testing.T) {
 		Email:    "test@example.com",
 		TokenUse: "id", // Should be "access"
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_test123",
+			Issuer: mockIssuer,
 		},
 	}
 
@@ -315,10 +286,10 @@ func TestValidateToken_InvalidIssuer(t *testing.T) {
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -364,10 +335,10 @@ func TestRefreshPublicKeys_Success(t *testing.T) {
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -394,10 +365,10 @@ func TestRefreshPublicKeys_HTTPError(t *testing.T) {
 	server := createMockJWKSServer(nil, http.StatusInternalServerError)
 	defer server.Close()
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -429,10 +400,11 @@ func TestRequireAuth_Success(t *testing.T) {
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	mockIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", mockRegion, mockPoolID)
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -443,7 +415,7 @@ func TestRequireAuth_Success(t *testing.T) {
 		Role:     "COMMON",
 		TokenUse: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_test123",
+			Issuer: mockIssuer,
 		},
 	}
 
@@ -489,10 +461,10 @@ func TestRequireAuth_Success(t *testing.T) {
 
 func TestRequireAuth_MissingAuthHeader(t *testing.T) {
 	// Arrange
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 
@@ -525,10 +497,10 @@ func TestRequireAuth_MissingAuthHeader(t *testing.T) {
 
 func TestRequireAuth_InvalidToken(t *testing.T) {
 	// Arrange
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 
@@ -610,10 +582,10 @@ func TestJwkToRSAPublicKey_Success(t *testing.T) {
 		t.Fatalf("Failed to generate test key: %v", err)
 	}
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, "test-kid")
@@ -642,10 +614,10 @@ func TestJwkToRSAPublicKey_Success(t *testing.T) {
 
 func TestJwkToRSAPublicKey_InvalidBase64(t *testing.T) {
 	// Arrange
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 
@@ -685,10 +657,10 @@ func TestKeyRefreshTTL(t *testing.T) {
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-	defer os.Unsetenv("AWS_REGION")
-	defer os.Unsetenv("AWS_COGNITO_USER_POOL_ID")
+	mockRegion := "us-east-1"
+	mockPoolID := "us-east-1_test123"
+	t.Setenv("AWS_REGION", mockRegion)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL

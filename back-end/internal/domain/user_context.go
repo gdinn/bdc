@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"bdc/internal/middleware"
 	"bdc/internal/models"
 	"time"
 )
@@ -14,7 +13,7 @@ type CreateUserRequest struct {
 }
 
 type CreateUserContext struct {
-	Claims *middleware.UserClaims
+	Claims *models.UserClaims
 	User   *models.User
 }
 
@@ -28,7 +27,7 @@ func CreateUserData(req *CreateUserRequest) *models.User {
 	}
 }
 
-func NewCreateUserContext(claims *middleware.UserClaims, user *models.User) *CreateUserContext {
+func NewCreateUserContext(claims *models.UserClaims, user *models.User) *CreateUserContext {
 	return &CreateUserContext{
 		Claims: claims,
 		User:   user,

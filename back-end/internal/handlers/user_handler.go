@@ -82,7 +82,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // createUserContext factory method para criar o contexto completo
-func (h *UserHandler) createUserContext(claims *middleware.UserClaims, req *domain.CreateUserRequest) *domain.CreateUserContext {
+func (h *UserHandler) createUserContext(claims *models.UserClaims, req *domain.CreateUserRequest) *domain.CreateUserContext {
 	// Converter request HTTP para domain data
 	userData := domain.CreateUserData(req)
 

@@ -1,12 +1,13 @@
 package middleware
 
 import (
+	"bdc/internal/models"
+	"bdc/internal/testutils"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -18,7 +19,7 @@ import (
 )
 
 // Mock HTTP server para simular o endpoint JWKS do Cognito
-func createMockJWKSServer(jwks *CognitoJWKS, statusCode int) *httptest.Server {
+func createMockJWKSServer(jwks *models.CognitoJWKS, statusCode int) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
@@ -34,14 +35,14 @@ func generateTestRSAKey() (*rsa.PrivateKey, error) {
 }
 
 // Converte chave RSA para formato JWK
-func rsaKeyToJWK(pubKey *rsa.PublicKey, kid string) CognitoJWK {
+func rsaKeyToJWK(pubKey *rsa.PublicKey, kid string) models.CognitoJWK {
 	n := base64.RawURLEncoding.EncodeToString(pubKey.N.Bytes())
 
 	// Converter expoente para bytes
 	eBytes := big.NewInt(int64(pubKey.E)).Bytes()
 	e := base64.RawURLEncoding.EncodeToString(eBytes)
 
-	return CognitoJWK{
+	return models.CognitoJWK{
 		Kid: kid,
 		Kty: "RSA",
 		Use: "sig",
@@ -52,7 +53,7 @@ func rsaKeyToJWK(pubKey *rsa.PublicKey, kid string) CognitoJWK {
 }
 
 // Cria um token JWT válido para testes
-func createTestJWT(privateKey *rsa.PrivateKey, kid string, claims *UserClaims) (string, error) {
+func createTestJWT(privateKey *rsa.PrivateKey, kid string, claims *models.UserClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	token.Header["kid"] = kid
 	return token.SignedString(privateKey)
@@ -60,11 +61,10 @@ func createTestJWT(privateKey *rsa.PrivateKey, kid string, claims *UserClaims) (
 
 func TestNewAuthMiddleware(t *testing.T) {
 	// Arrange
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	mockJwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", mockRegion, mockPoolID)
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	mockJwksURL := testutils.GetJwksUrl(ma)
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 	t.Setenv("AWS_COGNITO_JWKS_URL", mockJwksURL)
 
 	// Act
@@ -75,12 +75,12 @@ func TestNewAuthMiddleware(t *testing.T) {
 		t.Error("Expected middleware to be created, but got nil")
 	}
 
-	if middleware.cognitoRegion != mockRegion {
-		t.Errorf("Expected region to be %s, but got %s", mockRegion, middleware.cognitoRegion)
+	if middleware.cognitoRegion != ma.AWS_REGION {
+		t.Errorf("Expected region to be %s, but got %s", ma.AWS_REGION, middleware.cognitoRegion)
 	}
 
-	if middleware.cognitoPoolID != mockPoolID {
-		t.Errorf("Expected poolID to be %s, but got %s", mockPoolID, middleware.cognitoPoolID)
+	if middleware.cognitoPoolID != ma.AWS_COGNITO_USER_POOL_ID {
+		t.Errorf("Expected poolID to be %s, but got %s", ma.AWS_COGNITO_USER_POOL_ID, middleware.cognitoPoolID)
 	}
 
 	if middleware.jwksURL != mockJwksURL {
@@ -89,6 +89,7 @@ func TestNewAuthMiddleware(t *testing.T) {
 }
 
 func TestNewAuthMiddleware_MissingEnvironmentVariables(t *testing.T) {
+	testutils.UnsetEnvironmentVars()
 	defer func() {
 		// Recover from panic
 		if r := recover(); r == nil {
@@ -109,23 +110,22 @@ func TestValidateToken_Success(t *testing.T) {
 
 	kid := "test-kid"
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, kid)
-	jwks := &CognitoJWKS{Keys: []CognitoJWK{jwk}}
+	jwks := &models.CognitoJWKS{Keys: []models.CognitoJWK{jwk}}
 
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
 	// Set up environment variables
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	mockIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", mockRegion, mockPoolID)
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	mockIssuer := testutils.GetIssuerUrl(ma)
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
 
 	// Create valid claims
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "testuser",
 		Role:     "COMMON",
@@ -159,15 +159,14 @@ func TestValidateToken_Success(t *testing.T) {
 
 func TestValidateToken_InvalidSigningMethod(t *testing.T) {
 	// Arrange
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 
 	// Create token with HMAC instead of RSA (invalid signing method)
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		TokenUse: "access",
 	}
@@ -194,14 +193,13 @@ func TestValidateToken_MissingKid(t *testing.T) {
 		t.Fatalf("Failed to generate test key: %v", err)
 	}
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		TokenUse: "access",
 	}
@@ -231,22 +229,21 @@ func TestValidateToken_InvalidTokenUse(t *testing.T) {
 
 	kid := "test-kid"
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, kid)
-	jwks := &CognitoJWKS{Keys: []CognitoJWK{jwk}}
+	jwks := &models.CognitoJWKS{Keys: []models.CognitoJWK{jwk}}
 
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	mockIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", mockRegion, mockPoolID)
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	mockIssuer := testutils.GetJwksUrl(ma)
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
 
 	// Create claims with invalid token_use
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		TokenUse: "id", // Should be "access"
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -281,21 +278,20 @@ func TestValidateToken_InvalidIssuer(t *testing.T) {
 
 	kid := "test-kid"
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, kid)
-	jwks := &CognitoJWKS{Keys: []CognitoJWK{jwk}}
+	jwks := &models.CognitoJWKS{Keys: []models.CognitoJWK{jwk}}
 
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
 
 	// Create claims with invalid issuer
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		TokenUse: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -330,15 +326,14 @@ func TestRefreshPublicKeys_Success(t *testing.T) {
 
 	kid := "test-kid"
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, kid)
-	jwks := &CognitoJWKS{Keys: []CognitoJWK{jwk}}
+	jwks := &models.CognitoJWKS{Keys: []models.CognitoJWK{jwk}}
 
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -365,10 +360,9 @@ func TestRefreshPublicKeys_HTTPError(t *testing.T) {
 	server := createMockJWKSServer(nil, http.StatusInternalServerError)
 	defer server.Close()
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
@@ -395,21 +389,20 @@ func TestRequireAuth_Success(t *testing.T) {
 
 	kid := "test-kid"
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, kid)
-	jwks := &CognitoJWKS{Keys: []CognitoJWK{jwk}}
+	jwks := &models.CognitoJWKS{Keys: []models.CognitoJWK{jwk}}
 
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	mockIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", mockRegion, mockPoolID)
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	mockIssuer := testutils.GetIssuerUrl(ma)
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL
 
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "testuser",
 		Role:     "COMMON",
@@ -461,10 +454,9 @@ func TestRequireAuth_Success(t *testing.T) {
 
 func TestRequireAuth_MissingAuthHeader(t *testing.T) {
 	// Arrange
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 
@@ -497,10 +489,9 @@ func TestRequireAuth_MissingAuthHeader(t *testing.T) {
 
 func TestRequireAuth_InvalidToken(t *testing.T) {
 	// Arrange
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 
@@ -533,7 +524,7 @@ func TestRequireAuth_InvalidToken(t *testing.T) {
 
 func TestGetUserClaimsFromContext_Success(t *testing.T) {
 	// Arrange
-	claims := &UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "testuser",
 		Role:     "COMMON",
@@ -582,10 +573,9 @@ func TestJwkToRSAPublicKey_Success(t *testing.T) {
 		t.Fatalf("Failed to generate test key: %v", err)
 	}
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, "test-kid")
@@ -614,14 +604,13 @@ func TestJwkToRSAPublicKey_Success(t *testing.T) {
 
 func TestJwkToRSAPublicKey_InvalidBase64(t *testing.T) {
 	// Arrange
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 
-	jwk := CognitoJWK{
+	jwk := models.CognitoJWK{
 		Kid: "test-kid",
 		Kty: "RSA",
 		Use: "sig",
@@ -652,15 +641,14 @@ func TestKeyRefreshTTL(t *testing.T) {
 
 	kid := "test-kid"
 	jwk := rsaKeyToJWK(&privateKey.PublicKey, kid)
-	jwks := &CognitoJWKS{Keys: []CognitoJWK{jwk}}
+	jwks := &models.CognitoJWKS{Keys: []models.CognitoJWK{jwk}}
 
 	server := createMockJWKSServer(jwks, http.StatusOK)
 	defer server.Close()
 
-	mockRegion := "us-east-1"
-	mockPoolID := "us-east-1_test123"
-	t.Setenv("AWS_REGION", mockRegion)
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", mockPoolID)
+	ma := testutils.GetMockAuthData()
+	t.Setenv("AWS_REGION", ma.AWS_REGION)
+	t.Setenv("AWS_COGNITO_USER_POOL_ID", ma.AWS_COGNITO_USER_POOL_ID)
 
 	middleware := NewAuthMiddleware()
 	middleware.jwksURL = server.URL

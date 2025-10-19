@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"bdc/internal/models"
 	"context"
 	"crypto/rsa"
 	"encoding/base64"
@@ -14,30 +15,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 )
-
-// CognitoJWKS representa a estrutura das chaves públicas do Cognito
-type CognitoJWKS struct {
-	Keys []CognitoJWK `json:"keys"`
-}
-
-type CognitoJWK struct {
-	Kid string `json:"kid"`
-	Kty string `json:"kty"`
-	Use string `json:"use"`
-	N   string `json:"n"`
-	E   string `json:"e"`
-	Alg string `json:"alg"`
-}
-
-// UserClaims represents JWT token claims (available properties)
-type UserClaims struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	Sub      string `json:"sub"`
-	TokenUse string `json:"token_use"`
-	jwt.RegisteredClaims
-}
 
 // AuthMiddleware manages cognito auth
 type AuthMiddleware struct {
@@ -73,13 +50,13 @@ func NewAuthMiddleware() *AuthMiddleware {
 	}
 }
 
-func (am *AuthMiddleware) ValidateToken(tokenString string) (*UserClaims, error) {
+func (am *AuthMiddleware) ValidateToken(tokenString string) (*models.UserClaims, error) {
 
 	// Extracts token without prefix
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
 	// Parse token without validation do extract kid (key ID)
-	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &models.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Verify if it is RSA
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -108,7 +85,7 @@ func (am *AuthMiddleware) ValidateToken(tokenString string) (*UserClaims, error)
 		return nil, fmt.Errorf("invalid token")
 	}
 
-	claims, ok := token.Claims.(*UserClaims)
+	claims, ok := token.Claims.(*models.UserClaims)
 	if !ok {
 		return nil, fmt.Errorf("failed to parse claims")
 	}
@@ -117,7 +94,7 @@ func (am *AuthMiddleware) ValidateToken(tokenString string) (*UserClaims, error)
 		return nil, fmt.Errorf("invalid token use: expected 'access', got '%s'", claims.TokenUse)
 	}
 
-	// Validate issuer
+	// Validate issuer - won't use auth_helper, subject matter at analysis
 	expectedIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", am.cognitoRegion, am.cognitoPoolID)
 	if claims.Issuer != expectedIssuer {
 		return nil, fmt.Errorf("invalid issuer: expected '%s', got '%s'", expectedIssuer, claims.Issuer)
@@ -154,7 +131,7 @@ func (am *AuthMiddleware) refreshPublicKeys() error {
 		return fmt.Errorf("failed to fetch JWKS: status code %d", resp.StatusCode)
 	}
 
-	var jwks CognitoJWKS
+	var jwks models.CognitoJWKS
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
 		return fmt.Errorf("failed to decode JWKS: %w", err)
 	}
@@ -180,7 +157,7 @@ func (am *AuthMiddleware) refreshPublicKeys() error {
 	return nil
 }
 
-func (am *AuthMiddleware) jwkToRSAPublicKey(jwk CognitoJWK) (*rsa.PublicKey, error) {
+func (am *AuthMiddleware) jwkToRSAPublicKey(jwk models.CognitoJWK) (*rsa.PublicKey, error) {
 	// Decode N (modulus)
 	nBytes, err := base64.RawURLEncoding.DecodeString(jwk.N)
 	if err != nil {
@@ -226,7 +203,7 @@ func (am *AuthMiddleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // GetUserClaimsFromContext extrai as claims do usuário do contexto
-func GetUserClaimsFromContext(ctx context.Context) (*UserClaims, bool) {
-	claims, ok := ctx.Value(authMiddleWareKeyUserClaims).(*UserClaims)
+func GetUserClaimsFromContext(ctx context.Context) (*models.UserClaims, bool) {
+	claims, ok := ctx.Value(authMiddleWareKeyUserClaims).(*models.UserClaims)
 	return claims, ok
 }

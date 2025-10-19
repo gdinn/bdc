@@ -2,22 +2,17 @@ package e2e
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/rsa"
-	"encoding/base64"
 	"encoding/json"
-	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"bdc/api"
-	"bdc/internal/middleware"
 	"bdc/internal/models"
 	"bdc/internal/testutils"
 
-	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
@@ -29,10 +24,11 @@ func TestE2E_AuthFlow(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Configurar variáveis de ambiente necessárias
-	setupAuthEnvironment(t)
+	ma := testutils.GetMockAuthData()
+	testutils.SetupAuthEnvironment(t, ma)
 
 	// Criar servidor mock do JWKS
-	privateKey, jwksServer := setupMockJWKSServer(t)
+	privateKey, jwksServer := testutils.SetupMockJWKSServer(t)
 	defer jwksServer.Close()
 
 	// Setup da aplicação
@@ -105,7 +101,7 @@ func testInvalidToken(t *testing.T, router http.Handler) {
 // testValidToken verifica requisição com token válido
 func testValidToken(t *testing.T, router http.Handler, db *gorm.DB, privateKey *rsa.PrivateKey) {
 	// Criar usuário no Cognito (simulado via claims)
-	token, claims := createValidToken(t, privateKey, "testuser@example.com", "testuser", models.UserRoleCommon)
+	token, claims := testutils.CreateValidToken(t, privateKey, "testuser@example.com", "testuser", models.UserRoleCommon)
 
 	// Criar body da requisição
 	requestBody := map[string]interface{}{
@@ -122,7 +118,7 @@ func testValidToken(t *testing.T, router http.Handler, db *gorm.DB, privateKey *
 
 	// Criar usuário no Cognito mock (via database para simular)
 	// Em produção, isso viria do Cognito
-	setupCognitoUser(t, db, claims.Email, "Test User")
+	testutils.SetupCognitoUser(t, db, claims.Email, "Test User")
 
 	req := httptest.NewRequest("POST", "/api/v1/users", bytes.NewReader(bodyBytes))
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -140,10 +136,10 @@ func testValidToken(t *testing.T, router http.Handler, db *gorm.DB, privateKey *
 // testCreateUserWithAuth testa criação completa de usuário autenticado
 func testCreateUserWithAuth(t *testing.T, router http.Handler, db *gorm.DB, privateKey *rsa.PrivateKey) {
 	// Criar token válido
-	token, claims := createValidToken(t, privateKey, "newuser@example.com", "newuser", models.UserRoleCommon)
+	token, claims := testutils.CreateValidToken(t, privateKey, "newuser@example.com", "newuser", models.UserRoleCommon)
 
 	// Setup usuário no Cognito mock
-	setupCognitoUser(t, db, claims.Email, "New User")
+	testutils.SetupCognitoUser(t, db, claims.Email, "New User")
 
 	// Preparar payload de criação de usuário
 	birthDate := time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC)
@@ -204,8 +200,8 @@ func testCreateUserEmailAlreadyExists(t *testing.T, router http.Handler, db *gor
 	}
 
 	// Tentar criar novamente com mesmo email
-	token, _ := createValidToken(t, privateKey, email, "duplicate", models.UserRoleCommon)
-	setupCognitoUser(t, db, email, "Duplicate User")
+	token, _ := testutils.CreateValidToken(t, privateKey, email, "duplicate", models.UserRoleCommon)
+	testutils.SetupCognitoUser(t, db, email, "Duplicate User")
 
 	requestBody := map[string]interface{}{
 		"phone":     "11988887777",
@@ -237,85 +233,6 @@ func testCreateUserEmailAlreadyExists(t *testing.T, router http.Handler, db *gor
 }
 
 // ===== HELPER FUNCTIONS =====
-
-// setupAuthEnvironment configura variáveis de ambiente para testes
-func setupAuthEnvironment(t *testing.T) {
-	t.Setenv("AWS_REGION", "us-east-1")
-	t.Setenv("AWS_COGNITO_USER_POOL_ID", "us-east-1_test123")
-}
-
-// setupMockJWKSServer cria servidor mock para JWKS do Cognito
-func setupMockJWKSServer(t *testing.T) (*rsa.PrivateKey, *httptest.Server) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("Failed to generate RSA key: %v", err)
-	}
-
-	jwk := rsaKeyToJWK(&privateKey.PublicKey, "test-kid")
-	jwks := &middleware.CognitoJWKS{
-		Keys: []middleware.CognitoJWK{jwk},
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(jwks)
-	}))
-
-	// Atualizar JWKS URL no middleware (via variável de ambiente ou config)
-	// Nota: Em testes reais, você precisaria de uma forma de injetar a URL do mock
-	t.Setenv("AWS_COGNITO_JWKS_URL", server.URL)
-
-	return privateKey, server
-}
-
-// rsaKeyToJWK converte chave RSA para formato JWK
-func rsaKeyToJWK(pubKey *rsa.PublicKey, kid string) middleware.CognitoJWK {
-	n := base64.RawURLEncoding.EncodeToString(pubKey.N.Bytes())
-	eBytes := big.NewInt(int64(pubKey.E)).Bytes()
-	e := base64.RawURLEncoding.EncodeToString(eBytes)
-
-	return middleware.CognitoJWK{
-		Kid: kid,
-		Kty: "RSA",
-		Use: "sig",
-		N:   n,
-		E:   e,
-		Alg: "RS256",
-	}
-}
-
-// createValidToken cria um token JWT válido para testes
-func createValidToken(t *testing.T, privateKey *rsa.PrivateKey, email, username string, role models.UserRole) (string, *middleware.UserClaims) {
-	claims := &middleware.UserClaims{
-		Email:    email,
-		Username: username,
-		Role:     string(role),
-		Sub:      "user-sub-" + username,
-		TokenUse: "access",
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_test123",
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	token.Header["kid"] = "test-kid"
-
-	tokenString, err := token.SignedString(privateKey)
-	if err != nil {
-		t.Fatalf("Failed to sign token: %v", err)
-	}
-
-	return tokenString, claims
-}
-
-// setupCognitoUser simula usuário no Cognito (para testes)
-func setupCognitoUser(t *testing.T, db *gorm.DB, email, name string) {
-	// Em testes E2E reais, você usaria um mock do serviço Cognito
-	// Por ora, apenas garantimos que não haja erro de contexto
-	t.Logf("Mock Cognito user created: %s (%s)", email, name)
-}
 
 // TestE2E_HealthCheck testa endpoint público sem autenticação
 func TestE2E_HealthCheck(t *testing.T) {
@@ -429,17 +346,18 @@ func TestE2E_FullUserLifecycle(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	setupAuthEnvironment(t)
+	ma := testutils.GetMockAuthData()
+	testutils.SetupAuthEnvironment(t, ma)
 
-	privateKey, jwksServer := setupMockJWKSServer(t)
+	privateKey, jwksServer := testutils.SetupMockJWKSServer(t)
 	defer jwksServer.Close()
 
 	router := api.SetupRoutes(db)
 
 	// 1. Criar usuário
 	email := "lifecycle@example.com"
-	token, _ := createValidToken(t, privateKey, email, "lifecycle", models.UserRoleCommon)
-	setupCognitoUser(t, db, email, "Lifecycle User")
+	token, _ := testutils.CreateValidToken(t, privateKey, email, "lifecycle", models.UserRoleCommon)
+	testutils.SetupCognitoUser(t, db, email, "Lifecycle User")
 
 	requestBody := map[string]interface{}{
 		"phone":     "11999888777",

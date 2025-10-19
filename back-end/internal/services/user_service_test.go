@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"bdc/internal/domain"
-	"bdc/internal/middleware"
 	"bdc/internal/models"
 	"bdc/internal/repositories"
 )
@@ -20,7 +19,7 @@ func TestUserService_CreateUserWithContext_Success(t *testing.T) {
 	// Adicionar usuário no Cognito mock
 	mockCognitoRepo.AddTestUser("test@example.com", "Test User", models.UserRoleCommon)
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "COMMON",
@@ -71,7 +70,7 @@ func TestUserService_CreateUserWithContext_ExternalChildError(t *testing.T) {
 	cognitoService := NewCognitoService(mockCognitoRepo)
 	userService := NewUserService(mockUserRepo, cognitoService)
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "COMMON",
@@ -109,7 +108,7 @@ func TestUserService_CreateUserWithContext_ChildManagerError(t *testing.T) {
 	cognitoService := NewCognitoService(mockCognitoRepo)
 	userService := NewUserService(mockUserRepo, cognitoService)
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "MANAGER",
@@ -149,7 +148,7 @@ func TestUserService_CreateUserWithContext_EmailAlreadyExists(t *testing.T) {
 	// Adicionar usuário no Cognito mock
 	mockCognitoRepo.AddTestUser("test@example.com", "Test User", models.UserRoleCommon)
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "COMMON",
@@ -190,7 +189,7 @@ func TestUserService_CreateUserWithContext_CognitoError(t *testing.T) {
 	// Configurar o mock do Cognito para falhar
 	mockCognitoRepo.ShouldFailGet = true
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "COMMON",
@@ -230,7 +229,7 @@ func TestUserService_CreateUserWithContext_RepositoryError(t *testing.T) {
 	// Configurar o mock do repositório para falhar na criação
 	mockUserRepo.ShouldFailCreate = true
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "COMMON",
@@ -372,7 +371,7 @@ func TestUserService_CreateUserWithContext_WithBirthDate(t *testing.T) {
 	// Adicionar usuário no Cognito mock
 	mockCognitoRepo.AddTestUser("test@example.com", "Test User", models.UserRoleCommon)
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "test@example.com",
 		Role:     "COMMON",

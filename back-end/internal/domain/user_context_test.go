@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"bdc/internal/middleware"
 	"bdc/internal/models"
 )
 
@@ -193,7 +192,7 @@ func TestCreateUserData_DefaultRoleIsAlwaysCommon(t *testing.T) {
 
 func TestNewCreateUserContext_Success(t *testing.T) {
 	// Arrange
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "testuser",
 		Role:     "COMMON",
@@ -268,7 +267,7 @@ func TestNewCreateUserContext_NilClaims(t *testing.T) {
 
 func TestNewCreateUserContext_NilUser(t *testing.T) {
 	// Arrange
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "test@example.com",
 		Username: "testuser",
 		Role:     "COMMON",
@@ -346,7 +345,7 @@ func TestCreateUserRequest_Struct(t *testing.T) {
 
 func TestCreateUserContext_Struct(t *testing.T) {
 	// Test para verificar que a struct CreateUserContext pode ser criada corretamente
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "admin@example.com",
 		Username: "admin",
 		Role:     "MANAGER",
@@ -395,7 +394,7 @@ func TestCreateUserData_CompleteWorkflow(t *testing.T) {
 		AgeGroup:  models.UserAgeGroupAdult,
 	}
 
-	claims := &middleware.UserClaims{
+	claims := &models.UserClaims{
 		Email:    "user@example.com",
 		Username: "user123",
 		Role:     "COMMON",

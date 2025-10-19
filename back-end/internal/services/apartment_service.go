@@ -3,7 +3,6 @@ package services
 import (
 	"bdc/internal/domain"
 	"bdc/internal/interfaces"
-	"bdc/internal/middleware"
 	"bdc/internal/models"
 	"bdc/internal/utils"
 	"errors"
@@ -26,7 +25,7 @@ func NewApartmentService(apartmentRepo interfaces.ApartmentRepositoryInterface) 
 	}
 }
 
-func (s *ApartmentService) CreateApartment(apartment *models.Apartment, claims *middleware.UserClaims) (*models.Apartment, error) {
+func (s *ApartmentService) CreateApartment(apartment *models.Apartment, claims *models.UserClaims) (*models.Apartment, error) {
 	if err := utils.ValidateManagerRole(claims); err != nil {
 		return nil, fmt.Errorf("%s: %w", ErrCreatingApartment, err)
 	}

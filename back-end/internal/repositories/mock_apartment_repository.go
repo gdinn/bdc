@@ -4,6 +4,8 @@ import (
 	"bdc/internal/interfaces"
 	"bdc/internal/models"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 // MockApartmentRepository implementa ApartmentRepositoryInterface para testes
@@ -40,20 +42,25 @@ func (m *MockApartmentRepository) Create(apartment *models.Apartment) (*models.A
 
 	// Replica validação gorm de não nulidade
 	if apartment.Number == "" {
-		return nil, fmt.Errorf("number cannot be empty")
+		return nil, fmt.Errorf("mock gorm: number cannot be empty")
 	}
 	if apartment.Building == "" {
-		return nil, fmt.Errorf("building cannot be empty")
+		return nil, fmt.Errorf("mock gorm: building cannot be empty")
 	}
 
-	// Replica validação gorm de existência
+	apartment.BaseModel.ID = uuid.New()
+	apartmentKey := m.GetApartmentKey(apartment)
+	m.apartments[apartmentKey] = apartment
 
-	/*
-		TODO: Inserir composite primary key p/ validar existência
-		TODO: Atualizar diagrama UML
-	*/
-
+	return apartment, nil
 }
 
-func (r *MockApartmentRepository) IsApartmentExists(apartment *models.Apartment) (bool, error) {
+func (m *MockApartmentRepository) IsApartmentExists(apartment *models.Apartment) (bool, error) {
+	apartmentKey := m.GetApartmentKey(apartment)
+	_, exists := m.apartments[apartmentKey]
+	return exists, nil
+}
+
+func (m *MockApartmentRepository) GetApartmentKey(apartment *models.Apartment) string {
+	return fmt.Sprint("%s:%s", apartment.Building, apartment.Number)
 }

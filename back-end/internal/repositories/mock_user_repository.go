@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"bdc/internal/domain"
@@ -54,7 +55,7 @@ func (m *MockUserRepository) AddTestUser(email, name string, userType models.Use
 	}
 
 	// Simular ID gerado pelo banco
-	user.BaseModel.ID = m.generateUUID()
+	user.BaseModel.ID = uuid.New()
 
 	m.users[user.Email] = user
 	id := m.nextID
@@ -74,17 +75,17 @@ func (m *MockUserRepository) Create(user *models.User) (*models.User, error) {
 
 	// Replica validação gorm de não nulidade
 	if user.Email == "" {
-		return nil, fmt.Errorf("email cannot be empty")
+		return nil, fmt.Errorf("mock gorm: email cannot be empty")
 	}
 
 	// Replica validação gorm de existência
 	normalizedEmail := strings.ToLower(strings.TrimSpace(user.Email))
 	if _, exists := m.users[normalizedEmail]; exists {
-		return nil, fmt.Errorf("email already exists")
+		return nil, fmt.Errorf("mock gorm: email already exists")
 	}
 
 	// Simular ID gerado pelo banco
-	user.BaseModel.ID = m.generateUUID()
+	user.BaseModel.ID = uuid.New()
 
 	// Adicionar ao mock storage
 	m.users[user.Email] = user
@@ -176,14 +177,4 @@ func (m *MockUserRepository) UserExists(email string) bool {
 	email = strings.ToLower(strings.TrimSpace(email))
 	_, exists := m.users[email]
 	return exists
-}
-
-// generateUUID simula geração de UUID (simplificado para testes)
-func (m *MockUserRepository) generateUUID() [16]byte {
-	// Simulação simples de UUID para testes
-	var uuid [16]byte
-	for i := 0; i < 16; i++ {
-		uuid[i] = byte(m.nextID + uint(i))
-	}
-	return uuid
 }

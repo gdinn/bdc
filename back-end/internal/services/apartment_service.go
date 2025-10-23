@@ -50,7 +50,7 @@ func (s *ApartmentService) validateApartmentIsNew(apartment *models.Apartment) e
 	}
 
 	if apartmentExists {
-		return fmt.Errorf("apartment.Number is %s and apartment.Building is %s: %w", apartment.Number, apartment.Building, domain.ErrApartmentAlreadyExists)
+		return fmt.Errorf("apartment.Name is %s and apartment.Building is %s: %w", apartment.Name, apartment.Building, domain.ErrApartmentAlreadyExists)
 	}
 
 	return nil

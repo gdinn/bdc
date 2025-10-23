@@ -32,7 +32,7 @@ func (r *ApartmentRepository) Create(apartment *models.Apartment) (*models.Apart
 func (r *ApartmentRepository) IsApartmentExists(apartment *models.Apartment) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.Apartment{}).
-		Where("number = ? AND building = ? AND deleted_at IS NULL", apartment.Number, apartment.Building).
+		Where("name = ? AND building = ? AND deleted_at IS NULL", apartment.Name, apartment.Building).
 		Count(&count).Error
 
 	if err != nil {

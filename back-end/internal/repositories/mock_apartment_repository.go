@@ -11,7 +11,7 @@ import (
 // MockApartmentRepository implementa ApartmentRepositoryInterface para testes
 type MockApartmentRepository struct {
 	// Maps para simular o estado do banco de dados
-	apartments map[string]*models.Apartment // Key: %s:%s (building:number)
+	apartments map[string]*models.Apartment // Key: %s:%s (building:name)
 	nextID     uint
 
 	// Flags para simular erros
@@ -41,8 +41,8 @@ func (m *MockApartmentRepository) Create(apartment *models.Apartment) (*models.A
 	}
 
 	// Replica validação gorm de não nulidade
-	if apartment.Number == "" {
-		return nil, fmt.Errorf("mock gorm: number cannot be empty")
+	if apartment.Name == "" {
+		return nil, fmt.Errorf("mock gorm: name cannot be empty")
 	}
 	if apartment.Building == "" {
 		return nil, fmt.Errorf("mock gorm: building cannot be empty")
@@ -62,5 +62,5 @@ func (m *MockApartmentRepository) IsApartmentExists(apartment *models.Apartment)
 }
 
 func (m *MockApartmentRepository) GetApartmentKey(apartment *models.Apartment) string {
-	return fmt.Sprint("%s:%s", apartment.Building, apartment.Number)
+	return fmt.Sprint("%s:%s", apartment.Building, apartment.Name)
 }

@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type Apartment struct {
 	BaseModel
-	Number   string `json:"number" gorm:"not null;size:10" validate:"required,max=10"`
+	Name     string `json:"name" gorm:"not null;size:10" validate:"required,max=10"`
 	Building string `json:"building" gorm:"not null;size:10" validate:"required,max=10"`
 
 	// Chave estrangeira para representante legal

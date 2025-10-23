@@ -44,9 +44,6 @@ func (m *MockApartmentRepository) Create(apartment *models.Apartment) (*models.A
 	if apartment.Name == "" {
 		return nil, fmt.Errorf("mock gorm: name cannot be empty")
 	}
-	if apartment.Building == "" {
-		return nil, fmt.Errorf("mock gorm: building cannot be empty")
-	}
 
 	apartment.BaseModel.ID = uuid.New()
 	apartmentKey := m.GetApartmentKey(apartment)

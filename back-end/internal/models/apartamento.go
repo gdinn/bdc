@@ -4,8 +4,7 @@ import "github.com/google/uuid"
 
 type Apartment struct {
 	BaseModel
-	Name     string `json:"name" gorm:"not null;size:10" validate:"required,max=10"`
-	Building string `json:"building" gorm:"not null;size:10" validate:"required,max=10"`
+	Name string `json:"name" gorm:"not null;size:10" validate:"required,max=10"`
 
 	// Chave estrangeira para representante legal
 	LegalRepresentativeID *uuid.UUID `json:"legal_representative_id,omitempty" gorm:"type:uuid"`
@@ -16,6 +15,10 @@ type Apartment struct {
 	Vehicles []Vehicle `json:"vehicles,omitempty" gorm:"foreignKey:ApartmentID"`
 	Pets     []Pet     `json:"pets,omitempty" gorm:"foreignKey:ApartmentID"`
 	Bicycles []Bicycle `json:"bicycles,omitempty" gorm:"foreignKey:ApartmentID"`
+
+	// Chave estrangeira
+	BuildingID uuid.UUID `json:"building_id" gorm:"not null type:uuid" validate:"required"`
+	Building   Building  `gorm:"foreignKey:BuildingID"`
 }
 
 // AddUser adiciona um usuário ao apartamento

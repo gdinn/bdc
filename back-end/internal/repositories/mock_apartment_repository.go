@@ -59,5 +59,5 @@ func (m *MockApartmentRepository) IsApartmentExists(apartment *models.Apartment)
 }
 
 func (m *MockApartmentRepository) GetApartmentKey(apartment *models.Apartment) string {
-	return fmt.Sprint("%s:%s", apartment.Building, apartment.Name)
+	return fmt.Sprintf("%v:%s", apartment.Building, apartment.Name)
 }

@@ -52,10 +52,21 @@ func (m *MockBuildingRepository) Create(building *models.Building) (*models.Buil
 }
 
 func (m *MockBuildingRepository) IsBuildingExists(building *models.Building) (bool, error) {
+	m.IsBuildingExistsCallCount++
 	for _, b := range m.buildings {
 		if b.Name == building.Name {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+func (m *MockBuildingRepository) AddTestBuilding(name string) *models.Building {
+	building := &models.Building{
+		Name: name,
+	}
+	building.BaseModel.ID = uuid.New()
+	m.buildings[building.BaseModel.ID] = building
+
+	return building
 }

@@ -1,16 +1,20 @@
 package domain
 
-import "bdc/internal/models"
+import (
+	"bdc/internal/models"
+
+	"github.com/google/uuid"
+)
 
 type CreateApartmentRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Building string `json:"building" validate:"required"`
+	Name       string    `json:"name" validate:"required"`
+	BuildingID uuid.UUID `json:"building" validate:"required"`
 }
 
 func CreateApartmentData(req *CreateApartmentRequest) *models.Apartment {
 	return &models.Apartment{
-		Name:     req.Name,
-		Building: req.Building,
+		Name:       req.Name,
+		BuildingID: req.BuildingID,
 	}
 }
 

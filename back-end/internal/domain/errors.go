@@ -7,6 +7,7 @@ var (
 	ErrUnauthorizedEmailCreation = errors.New("cannot create user with different email from initial registration")
 	ErrEmailAlreadyExists        = errors.New("email already exists")
 	ErrApartmentAlreadyExists    = errors.New("apartment already exists")
+	ErrBuildingAlreadyExists     = errors.New("building already exists")
 
 	// Input errors
 	ErrEmailEmpty                        = errors.New("email cannot be empty")

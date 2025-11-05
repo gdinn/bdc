@@ -18,6 +18,7 @@ SET search_path TO bdc;
 
 -- 2. Transferir ownership de todas as tabelas existentes para migration_user
 ALTER TABLE IF EXISTS users OWNER TO migration_user;
+ALTER TABLE IF EXISTS buildings OWNER TO migration_user;
 ALTER TABLE IF EXISTS apartments OWNER TO migration_user;
 ALTER TABLE IF EXISTS user_apartments OWNER TO migration_user;
 ALTER TABLE IF EXISTS vehicles OWNER TO migration_user;

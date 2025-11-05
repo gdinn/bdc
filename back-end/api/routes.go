@@ -25,15 +25,18 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// Repositories
 	userRepo := repositories.NewUserRepository(db)
 	apartmentRepo := repositories.NewApartmentRepository(db)
+	buildingRepo := repositories.NewBuildingRepository(db)
 	cognitoRepository := repositories.NewCognitoRepository(cfg)
 
 	// Servicves
 	cognitoService := services.NewCognitoService(cognitoRepository)
 	userService := services.NewUserService(userRepo, cognitoService)
+	buildingService := services.NewBuildingService(buildingRepo)
 	apartmentService := services.NewApartmentService(apartmentRepo)
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService)
+	buildingHandler := handlers.NewBuildingHandler(buildingService)
 	apartmentHandler := handlers.NewApartmentHandler(apartmentService)
 
 	// Middlewares
@@ -61,6 +64,7 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 		})
 	})
 	protected.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
+	protected.HandleFunc("/buildings", buildingHandler.CreateBuilding).Methods("POST")
 	protected.HandleFunc("/apartments", apartmentHandler.CreateApartment).Methods("POST")
 
 	// ====================

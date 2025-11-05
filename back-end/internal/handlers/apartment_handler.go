@@ -47,6 +47,7 @@ func (h *ApartmentHandler) CreateApartment(w http.ResponseWriter, r *http.Reques
 	var req domain.CreateApartmentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid JSON format", err)
+		return
 	}
 
 	if err := h.validator.Struct(req); err != nil {

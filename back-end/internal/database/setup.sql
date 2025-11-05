@@ -73,7 +73,20 @@ CREATE INDEX idx_users_type ON users(type);
 CREATE INDEX idx_users_role ON users(role);
 
 -- =====================================================
--- 2. TABELA DE APARTAMENTOS
+-- 2. TABELA DE BLOCOS
+-- =====================================================
+CREATE TABLE IF NOT EXISTS buildings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ,
+    
+    -- Campos específicos
+    name VARCHAR(20) NOT NULL
+);
+
+-- =====================================================
+-- 3. TABELA DE APARTAMENTOS
 -- =====================================================
 CREATE TABLE IF NOT EXISTS apartments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,7 +112,7 @@ CREATE INDEX idx_apartments_number_building ON apartments(number, building);
 CREATE INDEX idx_apartments_legal_representative_id ON apartments(legal_representative_id);
 
 -- =====================================================
--- 3. TABELA DE RELACIONAMENTO USUÁRIOS-APARTAMENTOS
+-- 4. TABELA DE RELACIONAMENTO USUÁRIOS-APARTAMENTOS
 -- =====================================================
 CREATE TABLE IF NOT EXISTS user_apartments (
     user_id UUID NOT NULL,
@@ -125,7 +138,7 @@ CREATE INDEX idx_user_apartments_user_id ON user_apartments(user_id);
 CREATE INDEX idx_user_apartments_apartment_id ON user_apartments(apartment_id);
 
 -- =====================================================
--- 4. TABELA DE VEÍCULOS
+-- 5. TABELA DE VEÍCULOS
 -- =====================================================
 CREATE TABLE IF NOT EXISTS vehicles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -157,7 +170,7 @@ CREATE INDEX idx_vehicles_apartment_id ON vehicles(apartment_id);
 CREATE INDEX idx_vehicles_type ON vehicles(type);
 
 -- =====================================================
--- 5. TABELA DE PETS
+-- 6. TABELA DE PETS
 -- =====================================================
 CREATE TABLE IF NOT EXISTS pets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -185,7 +198,7 @@ CREATE INDEX idx_pets_apartment_id ON pets(apartment_id);
 CREATE INDEX idx_pets_species ON pets(species);
 
 -- =====================================================
--- 6. TABELA DE BICICLETAS
+-- 7. TABELA DE BICICLETAS
 -- =====================================================
 CREATE TABLE IF NOT EXISTS bicycles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -211,7 +224,7 @@ CREATE INDEX idx_bicycles_deleted_at ON bicycles(deleted_at);
 CREATE INDEX idx_bicycles_apartment_id ON bicycles(apartment_id);
 
 -- =====================================================
--- 7. TRIGGER PARA ATUALIZAR updated_at
+-- 8. TRIGGER PARA ATUALIZAR updated_at
 -- =====================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -224,6 +237,11 @@ $$ language 'plpgsql';
 -- Aplicar trigger em todas as tabelas
 CREATE TRIGGER update_users_updated_at 
     BEFORE UPDATE ON users 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_buildings_updated_at 
+    BEFORE UPDATE ON buildings 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -248,7 +266,7 @@ CREATE TRIGGER update_bicycles_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 8. VIEWS ÚTEIS
+-- 9. VIEWS ÚTEIS
 -- =====================================================
 
 -- View para usuários ativos

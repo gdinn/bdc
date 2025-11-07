@@ -8,7 +8,7 @@ import (
 
 type CreateApartmentRequest struct {
 	Name       string    `json:"name" validate:"required"`
-	BuildingID uuid.UUID `json:"building" validate:"required"`
+	BuildingID uuid.UUID `json:"building_id" validate:"required"`
 }
 
 func CreateApartmentData(req *CreateApartmentRequest) *models.Apartment {
@@ -19,6 +19,13 @@ func CreateApartmentData(req *CreateApartmentRequest) *models.Apartment {
 }
 
 type CreateApartmentResponse struct {
+	Success bool              `json:"success"`
+	Message string            `json:"message"`
+	Data    *models.Apartment `json:"data,omitempty"`
+	Error   string            `json:"error,omitempty"`
+}
+
+type GetApartmentResponse struct {
 	Success bool              `json:"success"`
 	Message string            `json:"message"`
 	Data    *models.Apartment `json:"data,omitempty"`

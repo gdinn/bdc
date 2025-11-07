@@ -12,6 +12,8 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type ApartmentHandler struct {
@@ -77,5 +79,38 @@ func (h *ApartmentHandler) CreateApartment(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *ApartmentHandler) GetApartmentByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userClaims, ok := middleware.GetUserClaimsFromContext(r.Context())
+	if !ok {
+		utils.SendErrorResponse(w, http.StatusUnauthorized, "Authentication context not found", fmt.Errorf("missing authentication context"))
+		return
+	}
+
+	vars := mux.Vars(r)
+	apartmentIDStr := vars["id"]
+	apartmentID, err := uuid.Parse(apartmentIDStr)
+
+	apartment, err := h.apartmentService.GetApartment(apartmentID, userClaims)
+	if err != nil {
+		if errors.Is(err, domain.ErrManagerRoleRequired) {
+			utils.SendErrorResponse(w, http.StatusUnauthorized, "Insuficient permissions", err)
+			return
+		}
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to get apartment", err)
+		return
+	}
+
+	response := domain.GetApartmentResponse{
+		Success: true,
+		Message: fmt.Sprintf("Apartment obtained successfully by %s", userClaims.Email),
+		Data:    apartment,
+	}
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }

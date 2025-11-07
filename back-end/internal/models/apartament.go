@@ -18,7 +18,7 @@ type Apartment struct {
 
 	// Chave estrangeira
 	BuildingID uuid.UUID `json:"building_id" gorm:"not null type:uuid" validate:"required"`
-	Building   Building  `gorm:"foreignKey:BuildingID"`
+	Building   Building  `json:"building" gorm:"foreignKey:BuildingID"`
 }
 
 // AddUser adiciona um usuário ao apartamento

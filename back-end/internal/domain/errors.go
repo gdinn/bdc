@@ -8,6 +8,7 @@ var (
 	ErrEmailAlreadyExists        = errors.New("email already exists")
 	ErrApartmentAlreadyExists    = errors.New("apartment already exists")
 	ErrBuildingAlreadyExists     = errors.New("building already exists")
+	ErrApartmentViewUnauth       = errors.New("apartment view unauthorized")
 
 	// Input errors
 	ErrEmailEmpty                        = errors.New("email cannot be empty")

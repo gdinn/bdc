@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +18,7 @@ type ApartmentService struct {
 
 const (
 	ErrCreatingApartment = "failed to create apartment"
+	ErrGettingApartment  = "failed to get apartment"
 )
 
 func NewApartmentService(apartmentRepo interfaces.ApartmentRepositoryInterface) *ApartmentService {
@@ -41,6 +43,21 @@ func (s *ApartmentService) CreateApartment(apartment *models.Apartment, claims *
 	}
 
 	return createdApartment, nil
+}
+
+func (s *ApartmentService) GetApartment(apartmentID uuid.UUID, claims *models.UserClaims) (*models.Apartment, error) {
+	// TODO: Validar acesso do usuário sob a unidade (manager, board, relacionamento)
+	if err := utils.ValidateManagerRole(claims); err != nil {
+		return nil, fmt.Errorf("%s: %w", ErrGettingApartment, err)
+	}
+
+	apartment, err := s.apartmentRepo.Get(apartmentID)
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", ErrGettingApartment, err)
+	}
+
+	return apartment, nil
 }
 
 func (s *ApartmentService) validateApartmentIsNew(apartment *models.Apartment) error {

@@ -66,6 +66,7 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	protected.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
 	protected.HandleFunc("/buildings", buildingHandler.CreateBuilding).Methods("POST")
 	protected.HandleFunc("/apartments", apartmentHandler.CreateApartment).Methods("POST")
+	protected.HandleFunc("/apartments/{id}", apartmentHandler.GetApartmentByID).Methods("GET")
 
 	// ====================
 	// CORS CONFIGURATION

@@ -95,20 +95,25 @@ CREATE TABLE IF NOT EXISTS apartments (
     deleted_at TIMESTAMPTZ,
     
     -- Campos específicos
-    number VARCHAR(10) NOT NULL,
-    building VARCHAR(10) NOT NULL,
+    name VARCHAR(10) NOT NULL,
+    building_id UUID,
     legal_representative_id UUID,
     
     -- Constraints
     CONSTRAINT fk_users_legal_rep_apartments 
         FOREIGN KEY (legal_representative_id) 
         REFERENCES users(id) 
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_buildings_apartments 
+        FOREIGN KEY (building_id) 
+        REFERENCES buildings(id) 
+        ON DELETE SET NULL    
 );
 
 -- Índices para apartments
 CREATE INDEX idx_apartments_deleted_at ON apartments(deleted_at);
-CREATE INDEX idx_apartments_number_building ON apartments(number, building);
+CREATE INDEX idx_apartments_building_id ON apartments(building_id);
 CREATE INDEX idx_apartments_legal_representative_id ON apartments(legal_representative_id);
 
 -- =====================================================

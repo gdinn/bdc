@@ -52,6 +52,10 @@ func (m *MockApartmentRepository) Create(apartment *models.Apartment) (*models.A
 	return apartment, nil
 }
 
+func (m *MockApartmentRepository) Get(apartmentID uuid.UUID) (*models.Apartment, error) {
+	return nil, nil
+}
+
 func (m *MockApartmentRepository) IsApartmentExists(apartment *models.Apartment) (bool, error) {
 	apartmentKey := m.GetApartmentKey(apartment)
 	_, exists := m.apartments[apartmentKey]
